@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Manajemen User</title> 
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+        .selected-row { background-color: #7078ee !important; }
+        #sidebar-container { width: 100%; flex-shrink: 0; }
+        main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+    </style>
+</head>
+ 
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Konten utama -->
+    <main>
+        <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+            <div class="title-bar">
+                <div class="title-bar-text">Manajemen User</div>
+            </div>
+            <div class="window-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; padding: 10px; padding-bottom: 0; margin-bottom: 10px;">
+                    <input id="searchInput" type="text" placeholder="Cari user..." style="width: 300px;" />
+                    <button onclick="openForm()">+ Tambah User</button>
+                </div>
+
+                <div style="flex: 1; overflow: auto; border: 1px solid #8e8f8f; background: white;">
+                    <table style="width: 100%;">
+                        <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Nama Lengkap</th>
+                        <th>Role</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="userTable"></tbody>
+            </table>
+                </div>
+            <!-- Pagination Controls -->
+                <div id="pagination-controls" style="padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <button id="prev-page">Sebelumnya</button>
+                    <span id="page-info"></span>
+                    <button id="next-page">Berikutnya</button>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <!-- 🧾 Modal Form -->
+    <div id="formModal" class="modal-overlay">
+        <div class="window" style="width: 400px;">
+            <div class="title-bar">
+                <div class="title-bar-text" id="formTitle">Tambah User</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Close" onclick="closeForm()"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <form id="userForm">
+                <input type="hidden" id="user_id" />
+                    <div class="field-row-stacked">
+                        <label for="username">Username</label>
+                        <input id="username" type="text" style="width: 100%;" required />
+                </div>
+                    <div class="field-row-stacked">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" placeholder="Kosongkan jika tidak ingin diubah" style="width: 100%;" />
+                </div>
+                    <div class="field-row-stacked">
+                        <label for="nama">Nama Lengkap</label>
+                        <input id="nama" type="text" style="width: 100%;" required />
+                </div>
+                    <div class="field-row-stacked">
+                        <label for="role">Role</label>
+                        <select id="role" style="width: 100%;">
+                        <option value="kasir">Kasir</option>
+                        <option value="admin">Admin</option>
+                        <option value="sales">Sales</option>
+                    </select>
+                </div>
+                    <div style="margin-top: 15px; text-align: right;">
+                        <button type="button" onclick="closeForm()">Batal</button>
+                        <button type="submit" class="default">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp();
+
+        const SERVER_IP = localStorage.getItem('server_ip') || 'localhost';
+        const apiUrl = `http://${SERVER_IP}:1987/maju/api/users.php`;
+        const tableBody = document.getElementById("userTable");
+        const formModal = document.getElementById("formModal");
+        const form = document.getElementById("userForm");
+
+        let allUsers = [];
+        let filteredUsers = [];
+        let currentPage = 1;
+        const itemsPerPage = parseInt(localStorage.getItem('pagination_limit')) || 10;
+
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+
+        async function fetchAllUsers() {
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Memuat...</td></tr>`;
+            try {
+                const res = await fetch(apiUrl);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    allUsers = result.data;
+                    filterAndDisplayUsers();
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Gagal terhubung.</td></tr>`;
+            }
+        }
+
+        function filterAndDisplayUsers(keyword = "", page = 1) {
+            currentPage = page;
+            const lowerKeyword = keyword.toLowerCase();
+
+            filteredUsers = allUsers.filter(u =>
+                u.username.toLowerCase().includes(lowerKeyword) ||
+                u.nama.toLowerCase().includes(lowerKeyword) ||
+                u.role.toLowerCase().includes(lowerKeyword)
+            );
+
+            const totalItems = filteredUsers.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginatedItems = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            renderTable(paginatedItems);
+            renderPagination(totalItems, totalPages);
+        }
+
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Tidak ada data.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = data.map(u => `
+                <tr onclick="warnabaris(this)">
+                    <td>${u.user_id}</td>
+                    <td>${u.username}</td>
+                    <td>${u.nama}</td>
+                    <td>${u.role}</td>
+                    <td style="text-align: center;">
+                        <button onclick='editUser(${JSON.stringify(u)})'>Edit</button>
+                        <button onclick='deleteUser(${u.user_id})'>Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(totalItems, totalPages) {
+            if (totalPages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages} (${totalItems} item)`;
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        document.getElementById("searchInput").addEventListener("input", e => {
+            filterAndDisplayUsers(e.target.value, 1);
+        });
+
+        function clearSelectedRows() {
+            document.querySelectorAll("#userTable tr").forEach(r => {
+                r.classList.remove("selected-row");
+            });
+        }
+
+        function warnabaris(row) {
+            const isSelected = row.classList.contains("selected-row");
+
+            clearSelectedRows();
+
+            if (!isSelected) {
+                row.classList.add("selected-row");
+            }
+        }
+
+        function openForm() {
+            form.reset();
+            document.getElementById("user_id").value = "";
+            document.getElementById("formTitle").textContent = "Tambah User";
+            document.getElementById("password").required = true; // Password wajib saat tambah
+            formModal.style.display = "flex";
+        }
+
+        function closeForm() {
+            formModal.style.display = "none";
+        }
+
+        function editUser(user) {
+            openForm();
+            document.getElementById("formTitle").textContent = "Edit User";
+            document.getElementById("user_id").value = user.user_id;
+            document.getElementById("username").value = user.username;
+            document.getElementById("nama").value = user.nama;
+            document.getElementById("role").value = user.role;
+            document.getElementById("password").required = false; // Password tidak wajib saat edit
+        }
+
+        form.addEventListener("submit", async e => {
+            e.preventDefault();
+            const id = document.getElementById("user_id").value;
+            const dataToSend = {
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+                nama: document.getElementById("nama").value,
+                role: document.getElementById("role").value
+            };
+
+            // Jangan kirim password kosong saat edit
+            if (id && dataToSend.password === "") {
+                delete dataToSend.password;
+            }
+
+            let url = id ? `${apiUrl}?id=${id}` : apiUrl;
+            let method = id ? "PUT" : "POST";
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(dataToSend)
+                });
+                const result = await res.json();
+                customAlert(result.message);
+                if (result.status === 'success' || result.status === 'info') {
+                    closeForm();
+                    fetchAllUsers();
+                }
+            } catch (error) {
+                customAlert("Gagal terhubung ke server.", "error");
+            }
+        });
+
+        async function deleteUser(id) {
+            const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
+            if (loggedInUser && loggedInUser.id === id) {
+                customAlert("Anda tidak dapat menghapus akun Anda sendiri.", "error");
+                return;
+            }
+
+            customConfirm("Yakin ingin menghapus user ini?", async () => {
+                try {
+                    const res = await fetch(`${apiUrl}?id=${id}`, { method: "DELETE" });
+                    const result = await res.json();
+                    customAlert(result.message);
+                    fetchAllUsers();
+                } catch (error) {
+                    customAlert("Gagal terhubung ke server.", "error");
+                }
+            });
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) filterAndDisplayUsers(document.getElementById("searchInput").value, currentPage - 1);
+        });
+        nextButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+            if (currentPage < totalPages) filterAndDisplayUsers(document.getElementById("searchInput").value, currentPage + 1);
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!event.target.closest("#userTable")) {
+                clearSelectedRows();
+            }
+        });
+
+        fetchAllUsers();
+    </script>
+</body>
+
+</html>

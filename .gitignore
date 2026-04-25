@@ -1,0 +1,45 @@
+# Local config
+/config/database.local.php
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies
+/node_modules/
+/electron/node_modules/
+/vendor/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+/dist/
+/build/
+/out/
+/electron/dist/
+/electron/build/
+/electron/out/
+
+# Runtime upload/cache content
+/api/upload/*
+!/api/upload/.gitkeep
+!/api/upload/index.html
+/upload/*
+!/upload/.gitkeep
+!/upload/index.html
+
+# OS/editor junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
+*.temp

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Perbaikan API Aplikasi Maju</title>
+    <style>
+        :root {
+            --bg: #f5f1e8;
+            --card: #fffdf9;
+            --ink: #1d2935;
+            --muted: #5f6b77;
+            --line: #d9cfbd;
+            --accent: #0f766e;
+            --warn: #b45309;
+            --danger: #b91c1c;
+            --soft: #f3e8d3;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 30%),
+                linear-gradient(180deg, #faf7f0 0%, var(--bg) 100%);
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
+        }
+
+        .hero,
+        .section,
+        .item {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            box-shadow: 0 16px 32px rgba(29, 41, 53, 0.07);
+        }
+
+        .hero,
+        .section {
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .item {
+            padding: 18px 20px;
+            margin-top: 14px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 0;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 3.1rem);
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.76rem;
+            color: var(--warn);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .high {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .medium {
+            background: #fef3c7;
+            color: var(--warn);
+        }
+
+        .low {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        code,
+        pre {
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        pre {
+            background: #1d2935;
+            color: #f8fafc;
+            padding: 12px;
+            border-radius: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        ul {
+            margin: 8px 0 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--line);
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--soft);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <section class="hero">
+            <div class="eyebrow">Hasil Audit Kode PHP Folder API</div>
+            <h1>Daftar Perbaikan API</h1>
+            <p>Halaman ini berisi temuan yang layak diperbaiki setelah membaca seluruh file PHP di folder <code>api</code>. Fokusnya adalah bug nyata, inkonsistensi format API, risiko keamanan, dan file yang sebaiknya dipisah dari endpoint publik.</p>
+        </section>
+
+        <section class="section">
+            <div class="eyebrow">Prioritas Ringkas</div>
+            <h2>Apa yang Paling Perlu Dikerjakan Dulu</h2>
+            <div class="grid">
+                <div class="item">
+                    <span class="badge high">Prioritas Tinggi</span>
+                    <h3>Keamanan dan file utilitas</h3>
+                    <ul>
+                        <li>Amankan atau hapus <code>api/pass.php</code>.</li>
+                        <li>Nonaktifkan error detail di endpoint publik seperti <code>login.php</code> dan <code>gambar.php</code>.</li>
+                        <li>Pindahkan kredensial database dari source code ke konfigurasi terpisah.</li>
+                    </ul>
+                </div>
+                <div class="item">
+                    <span class="badge medium">Prioritas Menengah</span>
+                    <h3>Standarisasi API</h3>
+                    <ul>
+                        <li>Samakan format request dan response semua endpoint.</li>
+                        <li>Samakan nama field ID, status, dan error message.</li>
+                        <li>Samakan pagination antar endpoint list.</li>
+                    </ul>
+                </div>
+                <div class="item">
+                    <span class="badge low">Prioritas Rendah</span>
+                    <h3>Rapikan file lama</h3>
+                    <ul>
+                        <li>Rapikan nama file seperti <code>sycn.php</code> dan <code>print copy.php</code>.</li>
+                        <li>Gabungkan endpoint yang fungsinya tumpang tindih.</li>
+                        <li>Beri pemisahan jelas antara endpoint JSON, HTML, dan PDF.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="eyebrow">Temuan Detail</div>
+            <h2>Per File dan Per Masalah</h2>
+
+            <article class="item">
+                <span class="badge high">Tinggi</span>
+                <h3><code>api/pass.php</code></h3>
+                <p>File ini langsung mengganti password user <code>admin</code> menjadi nilai tetap <code>12345</code> saat diakses. Ini berbahaya jika file bisa dibuka dari browser atau dari jaringan lokal.</p>
+                <ul>
+                    <li>Hapus file dari folder publik, atau pindahkan ke script maintenance yang tidak bisa diakses web.</li>
+                    <li>Jangan simpan password default di source code.</li>
+                    <li>Kalau masih dibutuhkan, lindungi dengan autentikasi admin dan token khusus.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge high">Tinggi</span>
+                <h3><code>api/barcode.php</code></h3>
+                <p>Action <code>get-all-barang</code> menggunakan query yang salah:</p>
+<pre><code>SELECT * FROM barang WHERE limit 1</code></pre>
+                <p>Query itu tidak valid dan sangat mungkin gagal saat dipakai.</p>
+                <ul>
+                    <li>Perbaiki menjadi query yang benar, misalnya <code>SELECT * FROM barang LIMIT 1</code> atau query list sesuai kebutuhan.</li>
+                    <li>Tambahkan <code>status</code> yang konsisten seperti endpoint lain.</li>
+                    <li>Samakan nama action atau ganti file ini dengan endpoint yang lebih modern.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge high">Tinggi</span>
+                <h3><code>api/histori.php</code></h3>
+                <p>Beberapa query masih menyisipkan nilai langsung ke SQL tanpa prepared statement. Ini meningkatkan risiko SQL injection dan membuat kode sulit dipelihara.</p>
+                <ul>
+                    <li>Ubah semua query dinamis ke prepared statement.</li>
+                    <li>Validasi semua input numerik seperti <code>id_pelanggan</code>, <code>id_barang</code>, dan <code>id_histori</code>.</li>
+                    <li>Tambahkan response HTTP code yang jelas untuk kasus invalid input.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge high">Tinggi</span>
+                <h3><code>api/login.php</code></h3>
+                <p>Login masih menerima password plaintext jika isi kolom password sama persis. Ini menandakan sistem masih menoleransi password yang belum di-hash.</p>
+                <ul>
+                    <li>Paksa seluruh user memakai password hash saja.</li>
+                    <li>Migrasikan password lama ke hash.</li>
+                    <li>Matikan <code>display_errors</code> pada endpoint login di production.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge high">Tinggi</span>
+                <h3><code>api/gambar.php</code></h3>
+                <p>Endpoint ini mengunduh gambar dari URL eksternal memakai <code>file_get_contents()</code>. Secara fungsi ini berjalan, tetapi rawan timeout, file besar, atau URL tidak aman.</p>
+                <ul>
+                    <li>Batasi domain atau minimal validasi URL dengan ketat.</li>
+                    <li>Batasi ukuran file gambar maksimum.</li>
+                    <li>Tambahkan timeout dan pengecekan MIME type.</li>
+                    <li>Matikan debug error display di endpoint publik.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge medium">Menengah</span>
+                <h3><code>api/sycn.php</code></h3>
+                <p>Nama file kemungkinan salah ketik. File tetap berfungsi, tetapi nama seperti ini membingungkan dan berisiko membuat route salah di masa depan.</p>
+                <ul>
+                    <li>Ganti nama file menjadi <code>sync.php</code>.</li>
+                    <li>Jika frontend sudah memakai nama lama, buat masa transisi atau redirect internal.</li>
+                    <li>Dokumentasikan skema sinkronisasi dan konflik data.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge medium">Menengah</span>
+                <h3><code>api/print copy.php</code></h3>
+                <p>Nama file mengandung spasi. Secara teknis bisa dipanggil, tetapi kurang rapi dan merepotkan untuk routing, scripting, dan tooling.</p>
+                <ul>
+                    <li>Ganti nama menjadi <code>print-copy.php</code> atau hapus jika memang file percobaan.</li>
+                    <li>Pastikan hanya satu versi file print yang dianggap aktif.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge medium">Menengah</span>
+                <h3><code>api/order.php</code></h3>
+                <p>File ini mengeluarkan HTML, bukan JSON, dan mengakses database lain yaitu <code>gudang</code>. Dari sudut desain API, file ini sebaiknya dipisah dari folder endpoint JSON.</p>
+                <ul>
+                    <li>Pindahkan ke folder halaman/report jika memang dipakai sebagai tampilan HTML.</li>
+                    <li>Jika dibutuhkan oleh frontend modern, ubah output menjadi JSON.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge medium">Menengah</span>
+                <h3><code>api/transaksi.php</code> dan <code>api/transaksi_scanner.php</code></h3>
+                <p>Dua file ini sangat mirip. Risiko duplikasi bug cukup tinggi karena perubahan harus dilakukan di dua tempat.</p>
+                <ul>
+                    <li>Gabungkan logika bisnis penjualan ke satu service/helper.</li>
+                    <li>Biarkan perbedaan hanya pada mode GET jika memang perlu.</li>
+                    <li>Tambahkan validasi stok dan transaksi dalam fungsi bersama.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge medium">Menengah</span>
+                <h3><code>api/import.php</code></h3>
+                <p>File ini memakai koneksi database sendiri lewat PDO, berbeda dengan endpoint lain yang memakai <code>db.php</code> dan mysqli. Ini membuat konfigurasi jadi ganda.</p>
+                <ul>
+                    <li>Satukan konfigurasi koneksi database di satu tempat.</li>
+                    <li>Tambahkan validasi field wajib selain <code>nama_barang</code>.</li>
+                    <li>Pertimbangkan mode upsert jika import dipakai berulang.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge medium">Menengah</span>
+                <h3><code>api/db.php</code></h3>
+                <p>Kredensial database masih ditulis langsung di source code dan password database kosong.</p>
+                <ul>
+                    <li>Pindahkan konfigurasi ke environment file atau config luar web root.</li>
+                    <li>Gunakan user database khusus aplikasi, bukan root jika memungkinkan.</li>
+                    <li>Tambahkan mode error logging yang aman.</li>
+                </ul>
+            </article>
+
+            <article class="item">
+                <span class="badge low">Rendah</span>
+                <h3>Standarisasi Response</h3>
+                <p>Format response belum seragam. Contohnya:</p>
+                <ul>
+                    <li>Sebagian memakai <code>{status:"success"}</code>.</li>
+                    <li>Sebagian memakai <code>{success:true}</code>.</li>
+                    <li>Sebagian mengembalikan array langsung tanpa wrapper.</li>
+                    <li>File PDF dan HTML berada satu folder dengan endpoint JSON.</li>
+                </ul>
+                <p>Saran standar minimal:</p>
+<pre><code>{
+  "status": "success",
+  "message": "Keterangan singkat",
+  "data": {}
+}</code></pre>
+            </article>
+
+            <article class="item">
+                <span class="badge low">Rendah</span>
+                <h3>Standarisasi Request</h3>
+                <p>Beberapa endpoint memakai JSON body, beberapa form biasa, beberapa query action. Ini menyulitkan integrasi frontend.</p>
+                <ul>
+                    <li>Tentukan satu pola utama: REST JSON.</li>
+                    <li>Kurangi endpoint model <code>?aksi=...</code> dan <code>?action=...</code> jika ada pengganti yang lebih bersih.</li>
+                    <li>Samakan nama field ID seperti <code>id</code> atau <code>barang_id</code> sesuai konteks, lalu konsisten.</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="section">
+            <div class="eyebrow">Saran Struktur Ulang</div>
+            <h2>Usulan Rapikan Folder API</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Masalah Sekarang</th>
+                        <th>Usulan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>JSON API, PDF, HTML, dan utilitas campur dalam satu folder.</td>
+                        <td>Pisahkan menjadi <code>api/</code>, <code>reports/</code>, <code>scripts/</code>, dan <code>storage/</code>.</td>
+                    </tr>
+                    <tr>
+                        <td>Duplikasi logika penjualan dan cetak.</td>
+                        <td>Pindahkan query dan logika hitung ke helper/service bersama.</td>
+                    </tr>
+                    <tr>
+                        <td>Konfigurasi database ganda.</td>
+                        <td>Gunakan satu file konfigurasi pusat.</td>
+                    </tr>
+                    <tr>
+                        <td>File sensitif masih bisa diakses web.</td>
+                        <td>Pindahkan file maintenance ke luar document root.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="eyebrow">Kesimpulan</div>
+            <h2>Status Umum</h2>
+            <p>API aplikasi ini secara umum sudah berjalan dan endpoint utamanya cukup lengkap, tetapi ada beberapa hal yang memang layak diperbaiki. Yang paling penting adalah keamanan file utilitas, query yang salah di <code>barcode.php</code>, query non-prepared di <code>histori.php</code>, serta standarisasi format API agar frontend lebih mudah dipelihara.</p>
+        </section>
+    </div>
+</body>
+
+</html>

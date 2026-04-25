@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Pengaturan Aplikasi</title>
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+        #sidebar-container { width: 100%; flex-shrink: 0; }
+        main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    <main>
+        <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+            <div class="title-bar">
+                <div class="title-bar-text">Pengaturan Sistem</div>
+            </div>
+            <div class="window-body" style="margin: 0; flex: 1; padding: 10px; overflow: auto;">
+                <fieldset>
+                    <legend>Konfigurasi Koneksi</legend>
+                    <div class="field-row-stacked" style="width: 100%">
+                        <label for="serverIp">IP Address / Domain Server</label>
+                        <input id="serverIp" type="text" style="width: 100%" placeholder="localhost atau 192.168.1.x">
+                    </div>
+                </fieldset>
+
+                <fieldset style="margin-top: 15px;">
+                    <legend>Tampilan Data</legend>
+                    <div class="field-row-stacked" style="width: 100%">
+                        <label for="paginationLimit">Jumlah Data Per Halaman (Pagination)</label>
+                        <input id="paginationLimit" type="number" min="5" max="100" style="width: 100%">
+                        <small>Mengatur berapa banyak baris yang muncul di tabel (Rekomendasi: 10-50)</small>
+                    </div>
+                </fieldset>
+
+                <div style="margin-top: 20px; text-align: right; gap: 10px; display: flex; justify-content: flex-end;">
+                    <button id="btnReset">Default</button>
+                    <button id="btnSave" class="default">Simpan Perubahan</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp();
+
+        const ipInput = document.getElementById('serverIp');
+        const limitInput = document.getElementById('paginationLimit');
+        const btnSave = document.getElementById('btnSave');
+        const btnReset = document.getElementById('btnReset');
+
+        async function loadSettings() {
+            // Muat dari config.json
+            const config = await window.electronAPI.loadConfig();
+            
+            ipInput.value = config.serverIp || localStorage.getItem('server_ip') || 'localhost';
+            limitInput.value = config.paginationLimit || localStorage.getItem('pagination_limit') || 10;
+        }
+
+        btnSave.addEventListener('click', async () => {
+            const newIp = ipInput.value.trim();
+            const newLimit = parseInt(limitInput.value);
+
+            if (!newIp || isNaN(newLimit)) {
+                customAlert("Harap isi semua data dengan benar.");
+                return;
+            }
+
+            const config = {
+                serverIp: newIp,
+                paginationLimit: newLimit
+            };
+
+            // Simpan ke File JSON (Permanen)
+            const success = await window.electronAPI.saveConfig(config);
+            
+            if (success) {
+                // Update LocalStorage agar efeknya instan di renderer
+                localStorage.setItem('server_ip', newIp);
+                localStorage.setItem('pagination_limit', newLimit);
+                
+                customAlert("Pengaturan berhasil disimpan!", "Sukses");
+            } else {
+                customAlert("Gagal menyimpan ke file konfigurasi.", "Error");
+            }
+        });
+
+        btnReset.addEventListener('click', () => {
+            ipInput.value = 'localhost';
+            limitInput.value = 10;
+        });
+
+        loadSettings();
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+## get transaksi
+GET http://localhost:1987/maju/api/transaksi.php HTTP/1.1
+
+
+## post transaksi
+POST http://localhost:1987/maju/api/transaksi.php HTTP/1.1
+Content-Type: application/json
+{
+    "role": "kasir",
+    "user_id": 1
+}
+

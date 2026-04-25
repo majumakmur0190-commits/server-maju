@@ -1,0 +1,34 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 10px;
+}
+
+.nav button {
+    width: 48%;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+input,
+button {
+    width: 100%;
+    padding: 12px;
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.card h3 {
+    margin: 0 0 10px;
+}
+
+.card button {
+    margin-top: 10px;
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link href="../css/pc.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 font-sans h-screen overflow-hidden">
+  <div id="sidebar-container"></div>
+
+  <!-- 🔹 Konten utama bergeser ke kanan -->
+  <main class="ml-16 group-hover:ml-56 transition-all duration-300 p-4 h-full flex flex-col bg-gray-100">
+    <div class="flex-grow overflow-y-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h2 class="text-xl font-semibold mb-4">Selamat Datang di Dashboard</h2>
+          <p class="text-gray-700">Gunakan menu di sebelah kiri untuk menavigasi aplikasi.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="./js/main.js"></script>
+  <script>
+    initializeApp(); // Panggil fungsi dari main.js
+
+    // Fungsi untuk menampilkan nama user yang login di console
+    function tampilkanSalamLogin() {
+      const userDataString = sessionStorage.getItem('loggedInUser');
+      if (userDataString) {
+        const user = JSON.parse(userDataString);
+        console.log(`User masuk dengan nama: ${user.username}`);
+      }
+    }
+    tampilkanSalamLogin();
+  </script>
+</body>
+
+</html>

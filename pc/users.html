@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Manajemen User</title> 
+    <link href="../css/pc.css" rel="stylesheet">
+</head>
+ 
+<body class="bg-gray-100 h-screen overflow-hidden font-sans">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Konten utama -->
+    <main class="ml-16 group-hover:ml-56 transition-all duration-300 p-4 overflow-y-auto h-full">
+        <!-- 🔍 Form Pencarian -->
+        <div class="flex items-center justify-between mb-6">
+            <input id="searchInput" type="text" placeholder="Cari user..."
+                class="px-4 py-2 border rounded-lg w-1/3 focus:outline-none focus:ring-2 focus:ring-primary" />
+            <button onclick="openForm()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary">+
+                Tambah User</button>
+        </div>
+
+        <!-- 📋 Tabel User -->
+        <div class="overflow-x-auto bg-white rounded-xl shadow">
+            <table class="min-w-full text-sm text-left text-gray-600">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th class="px-6 py-3">ID</th>
+                        <th class="px-6 py-3">Username</th>
+                        <th class="px-6 py-3">Nama Lengkap</th>
+                        <th class="px-6 py-3">Role</th>
+                        <th class="px-6 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="userTable"></tbody>
+            </table>
+            <!-- Pagination Controls -->
+            <div id="pagination-controls" class="flex items-center justify-between p-4 border-t">
+                <button id="prev-page" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+                <span id="page-info" class="text-sm text-gray-700"></span>
+                <button id="next-page" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Berikutnya</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 🧾 Modal Form -->
+    <div id="formModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-96">
+            <h2 id="formTitle" class="text-xl font-bold mb-4">Tambah User</h2>
+            <form id="userForm" class="space-y-4">
+                <input type="hidden" id="user_id" />
+                <div>
+                    <label class="block text-sm font-medium">Username</label>
+                    <input id="username" type="text"
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary" required />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Password</label>
+                    <input id="password" type="password" placeholder="Kosongkan jika tidak ingin diubah"
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Nama Lengkap</label>
+                    <input id="nama" type="text"
+                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary" required />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Role</label>
+                    <select id="role" class="w-full px-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-primary">
+                        <option value="kasir">Kasir</option>
+                        <option value="admin">Admin</option>
+                        <option value="sales">Sales</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeForm()" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp();
+
+        const apiUrl = "../api/users.php";
+        const tableBody = document.getElementById("userTable");
+        const formModal = document.getElementById("formModal");
+        const form = document.getElementById("userForm");
+
+        let allUsers = [];
+        let filteredUsers = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+
+        async function fetchAllUsers() {
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Memuat...</td></tr>`;
+            try {
+                const res = await fetch(apiUrl);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    allUsers = result.data;
+                    filterAndDisplayUsers();
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Gagal terhubung.</td></tr>`;
+            }
+        }
+
+        function filterAndDisplayUsers(keyword = "", page = 1) {
+            currentPage = page;
+            const lowerKeyword = keyword.toLowerCase();
+
+            filteredUsers = allUsers.filter(u =>
+                u.username.toLowerCase().includes(lowerKeyword) ||
+                u.nama.toLowerCase().includes(lowerKeyword) ||
+                u.role.toLowerCase().includes(lowerKeyword)
+            );
+
+            const totalItems = filteredUsers.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const paginatedItems = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            renderTable(paginatedItems);
+            renderPagination(totalItems, totalPages);
+        }
+
+        function renderTable(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">Tidak ada data.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = data.map(u => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-6 py-3">${u.user_id}</td>
+                    <td class="px-6 py-3 font-medium">${u.username}</td>
+                    <td class="px-6 py-3">${u.nama}</td>
+                    <td class="px-6 py-3">${u.role}</td>
+                    <td class="px-6 py-3 text-center space-x-2">
+                        <button onclick='editUser(${JSON.stringify(u)})' class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">Edit</button>
+                        <button onclick='deleteUser(${u.user_id})' class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(totalItems, totalPages) {
+            if (totalPages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages} (${totalItems} item)`;
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        document.getElementById("searchInput").addEventListener("input", e => {
+            filterAndDisplayUsers(e.target.value, 1);
+        });
+
+        function openForm() {
+            form.reset();
+            document.getElementById("user_id").value = "";
+            document.getElementById("formTitle").textContent = "Tambah User";
+            document.getElementById("password").required = true; // Password wajib saat tambah
+            formModal.classList.remove("hidden");
+        }
+
+        function closeForm() {
+            formModal.classList.add("hidden");
+        }
+
+        function editUser(user) {
+            openForm();
+            document.getElementById("formTitle").textContent = "Edit User";
+            document.getElementById("user_id").value = user.user_id;
+            document.getElementById("username").value = user.username;
+            document.getElementById("nama").value = user.nama;
+            document.getElementById("role").value = user.role;
+            document.getElementById("password").required = false; // Password tidak wajib saat edit
+        }
+
+        form.addEventListener("submit", async e => {
+            e.preventDefault();
+            const id = document.getElementById("user_id").value;
+            const dataToSend = {
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+                nama: document.getElementById("nama").value,
+                role: document.getElementById("role").value
+            };
+
+            // Jangan kirim password kosong saat edit
+            if (id && dataToSend.password === "") {
+                delete dataToSend.password;
+            }
+
+            let url = id ? `${apiUrl}?id=${id}` : apiUrl;
+            let method = id ? "PUT" : "POST";
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(dataToSend)
+                });
+                const result = await res.json();
+                customAlert(result.message);
+                if (result.status === 'success' || result.status === 'info') {
+                    closeForm();
+                    fetchAllUsers();
+                }
+            } catch (error) {
+                customAlert("Gagal terhubung ke server.", "error");
+            }
+        });
+
+        async function deleteUser(id) {
+            const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
+            if (loggedInUser && loggedInUser.id === id) {
+                customAlert("Anda tidak dapat menghapus akun Anda sendiri.", "error");
+                return;
+            }
+
+            customConfirm("Yakin ingin menghapus user ini?", async () => {
+                try {
+                    const res = await fetch(`${apiUrl}?id=${id}`, { method: "DELETE" });
+                    const result = await res.json();
+                    customAlert(result.message);
+                    fetchAllUsers();
+                } catch (error) {
+                    customAlert("Gagal terhubung ke server.", "error");
+                }
+            });
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) filterAndDisplayUsers(document.getElementById("searchInput").value, currentPage - 1);
+        });
+        nextButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+            if (currentPage < totalPages) filterAndDisplayUsers(document.getElementById("searchInput").value, currentPage + 1);
+        });
+
+        fetchAllUsers();
+    </script>
+</body>
+
+</html>

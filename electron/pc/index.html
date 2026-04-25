@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+  <style>
+    body { display: flex; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+    #sidebar-container { width: 200px; height: 100%; flex-shrink: 0; }
+    main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .dashboard-card { background: white; padding: 0px; border: 1px solid #8e8f8f; border-radius: 3px; box-shadow: 1px 1px 0 white inset; }
+  </style>
+</head>
+
+<body>
+  <div id="sidebar-container"></div>
+
+  <main>
+    <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none;">
+      <div class="title-bar">
+        <div class="title-bar-text">Dashboard</div>
+      </div>
+      <div class="window-body" style="height: 100%; overflow: auto;">
+          <h4>Selamat Datang di Dashboard</h4>
+          <p>Gunakan menu di sebelah kiri untuk menavigasi aplikasi.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="./js/main.js"></script>
+  <script>
+    initializeApp(); // Panggil fungsi dari main.js
+
+    // Fungsi untuk menampilkan nama user yang login di console
+    function tampilkanSalamLogin() {
+      const userDataString = sessionStorage.getItem('loggedInUser');
+      if (userDataString) {
+        const user = JSON.parse(userDataString);
+        console.log(`User masuk dengan nama: ${user.username}`);
+      }
+    }
+    tampilkanSalamLogin();
+  </script>
+</body>
+
+</html>

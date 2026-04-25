@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>📦 Data Barang</title>
+  <link href="../css/pc.css" rel="stylesheet">
+  <script>
+    // Fungsi untuk menangkap tombol yang ditekan
+    function handleKeyPress(event) {
+      const keyPressed = event.key;  // Menyimpan tombol yang ditekan
+      if (keyPressed === "Shift") {
+        console.log("Tombol Shift ditekan!");
+        //arahkan ke input pencarian
+        let searchInput = document.getElementById("search");
+        searchInput.focus();
+        searchInput.select();
+        searchInput.value = ""; // kosongkan input
+      }
+    }
+
+    // Menambahkan event listener untuk menangkap peristiwa keyboard
+    window.addEventListener("keydown", handleKeyPress);
+  </script>
+</head>
+
+<body class="bg-gray-100 font-sans h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <div id="sidebar-container"></div>
+
+  <!-- Konten utama -->
+  <main class="ml-16 group-hover:ml-56 transition-all duration-300 p-4 h-full flex flex-col">
+    <!-- 🔍 Pencarian & Tombol Tambah -->
+    <div class="flex justify-between items-center mb-4 flex-shrink-0">
+      <input id="search" type="text" placeholder="Cari nama barang atau kategori..."
+        class="px-4 py-2 border rounded-lg w-1/2 focus:ring-2 focus:ring-primary outline-none">
+
+      <button id="btnTambah" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">
+        + Tambah Barang
+      </button>
+    </div>
+
+    <!-- 📋 Tabel Data Barang -->
+    <div class="bg-white rounded-xl shadow-lg flex flex-col flex-grow overflow-hidden">
+      <table class="min-w-full text-sm text-left">
+        <thead class="bg-primary text-white">
+          <tr>
+            <th class="py-3 px-4 w-12">#</th> <!-- Lebar tetap untuk nomor -->
+            <th class="py-3 px-4 w-32">Barcode</th> <!-- Lebar fleksibel, mengisi sisa ruang -->
+            <th class="py-3 px-4">Nama Barang</th> <!-- Lebar fleksibel, mengisi sisa ruang -->
+            <th class="py-3 px-4 w-32 text-right">Harga HNA</th> <!-- Lebar tetap untuk harga -->
+            <th class="py-3 px-4 w-20 text-right">Stok</th> <!-- Lebar disesuaikan untuk angka stok -->
+            <th class="py-3 px-4 w-24">Satuan</th> <!-- Lebar tetap untuk satuan -->
+            <th class="py-3 px-4 w-28 text-center">Aksi</th> <!-- Lebar tetap untuk 2 tombol aksi -->
+          </tr>
+        </thead>
+        <tbody id="barangTable" class="overflow-y-auto">
+        </tbody>
+      </table>
+
+      <!-- Pagination Controls -->
+      <div id="pagination-controls" class="flex items-center justify-between p-4 border-t">
+        <button id="prev-page"
+          class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+        <span id="page-info" class="text-sm text-gray-700"></span>
+        <button id="next-page"
+          class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Berikutnya</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 🧩 Modal Tambah/Edit -->
+  <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+    <div
+      class="bg-white p-8 rounded-2xl shadow-2xl w-[90%] max-w-xl max-h-[90vh] overflow-y-auto transform transition-all scale-100">
+
+      <h2 id="modalTitle" class="text-2xl font-bold mb-5 text-center text-primary">Tambah Barang</h2>
+
+      <form id="barangForm" class="space-y-4">
+        <input type="hidden" id="barang_id">
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Barcode</label>
+          <input id="barcode" type="number" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Nama Barang</label>
+          <input id="nama_barang" type="text" class="w-full px-3 py-2 border rounded-lg" required>
+          <small class="text-xs text-red-500" id="namaBarangError" style="display: none;">Nama Barang Max 50
+            Karakter</small>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Kategori</label>
+          <select id="kategori_id" class="w-full px-3 py-2 border rounded-lg bg-white" required>
+            <option value="">Pilih Kategori...</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1">Harga HNA</label>
+            <input id="harga_hna" type="number" class="w-full px-3 py-2 border rounded-lg" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Satuan</label>
+            <input id="satuan" type="text" class="w-full px-3 py-2 border rounded-lg" required>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Stok Awal</label>
+          <input id="stok" type="number" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="btnBatal" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Simpan</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+  <script src="./js/main.js"></script>
+  <script src="./js/barang.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+{
+    "require": {
+        "mike42/escpos-php": "^2.2",
+        "smalot/pdfparser": "^2.12"
+    }
+}

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Toko Online</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-blue-800">
+
+    <!-- CUSTOMcustomAlert / CONFIRM -->
+    <div id="customModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-4 w-11/12 max-w-sm shadow-lg">
+            <div id="modalMessage" class="text-sm text-gray-700 mb-4"></div>
+            <div class="flex justify-end gap-2">
+                <button id="modalCancelBtn"
+                    class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 hidden">Batal</button>
+                <button id="modalOkBtn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-20 bg-primary text-white shadow">
+        <div class="flex items-center justify-center gap-1 py-1">
+            <img src="logo.png" alt="Logo" class="w-10 h-10">
+            <h1 class="text-lg font-bold">Maju Makmur</h1>
+        </div>
+    </header>
+
+
+    <!-- SEARCH -->
+    <div class="sticky top-[46px] z-40 bg-white p-1 shadow-sm">
+        <input id="search" type="text" placeholder="Cari barang..." oninput="onSearchChange()" class="w-full px-1 py-1 rounded-xl border border-gray-300 text-base
+               focus:outline-none focus:ring-2 focus:ring-primary">
+    </div>
+
+    <!-- PRODUCT LIST -->
+    <div id="products" class="p-1 grid grid-cols-2 gap-1"></div>
+
+    <!-- LOADING -->
+    <div id="loading" class="text-center text-gray-500 py-6 hidden">
+        Memuat...
+    </div>
+
+    <script>
+        const API_URL = "http://192.168.1.250:1987/maju/api/toko.php";
+
+        let page = 1;
+        let limit = 10;
+        let loading = false;
+        let hasMore = true;
+        let keyword = "";
+
+        /* =========================
+           LOAD DATA
+        ========================= */
+        function loadProducts(pencarianBaru = false) {
+            if (pencarianBaru) {
+                page = 1;
+                hasMore = true;
+                document.getElementById("products").innerHTML = "";
+            }
+
+            if (loading || !hasMore) return;
+            loading = true;
+
+            document.getElementById("loading").classList.remove("hidden");
+
+            fetch(`${API_URL}?q=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`)
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(res => {
+                    renderProducts(res.data);
+
+                    hasMore = res.has_more;
+                    page++;
+                })
+                .catch(() => {
+                    console.error("Gagal memuat produk.");
+                    hasMore = false; // Hentikan percobaan memuat jika ada error
+                })
+                .finally(() => {
+                    loading = false;
+                    if (!hasMore) {
+                        document.getElementById("loading").classList.add("hidden");
+                    }
+                });
+        }
+
+        /* =========================
+           RENDER (APPEND)
+        ========================= */
+        function renderProducts(data) {
+            const container = document.getElementById("products");
+
+            data.forEach(item => {
+                const img = item.gambar_url
+                    || "logo.png";
+
+                const card = document.createElement("div");
+                card.className =
+                    "bg-white rounded-2xl shadow p-3 flex flex-col";
+
+                card.innerHTML = `
+            <div class="w-full h-36 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden">
+                <img src="${img}" class="h-full object-contain">
+            </div>
+
+            <div class="mt-2 text-sm font-semibold line-clamp-2">
+                ${item.nama_barang}
+            </div>
+
+            <div class="mt-1 text-green-600 font-bold text-sm">
+                Rp ${formatRupiah(item.harga_hna)}
+            </div>
+
+            <div class="text-xs text-gray-500">
+                Barcode: ${item.barcode}
+            </div>
+
+            <div class="text-xs text-gray-500">
+                Stok: ${item.stok} ${item.satuan}
+            </div>
+
+            <button
+                onclick="beli('${item.nama_barang}')"
+                class="mt-3 bg-primary text-white py-2 rounded-xl
+                       text-sm active:bg-blue-800"
+            >
+                Beli
+            </button>
+        `;
+
+                container.appendChild(card);
+            });
+        }
+
+        /* =========================
+           SEARCH (DEBOUNCE)
+        ========================= */
+        let searchTimer;
+        function onSearchChange() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                keyword = document.getElementById("search").value;
+                loadProducts(true); // true menandakan ini adalah pencarian baru
+            }, 400);
+        }
+
+        /* =========================
+           INFINITE SCROLL
+        ========================= */
+        window.addEventListener("scroll", () => {
+            if (
+                window.innerHeight + window.scrollY >=
+                document.body.offsetHeight - 200
+            ) {
+                loadProducts();
+            }
+        });
+
+        /* =========================
+           HELPER
+        ========================= */
+        function formatRupiah(angka) {
+            return Number(angka).toLocaleString("id-ID");
+        }
+
+        function beli(nama) {
+            customAlert("Barang yang anda beli adalah:" + nama);
+        }
+
+        /* LOAD AWAL */
+        loadProducts();
+    </script>
+
+    <script>
+        /* ======================
+           CUSTOMcustomAlert & CONFIRM
+        ====================== */
+        function customAlert(message) {
+            return new Promise(resolve => {
+                const modal = document.getElementById("customModal");
+                const modalMessage = document.getElementById("modalMessage");
+                const okBtn = document.getElementById("modalOkBtn");
+                const cancelBtn = document.getElementById("modalCancelBtn");
+
+                modalMessage.textContent = message;
+                cancelBtn.classList.add("hidden");
+                okBtn.textContent = "OK";
+
+                modal.classList.remove("hidden");
+
+                okBtn.onclick = () => {
+                    modal.classList.add("hidden");
+                    resolve();
+                };
+            });
+        }
+
+        function customConfirm(message) {
+            return new Promise(resolve => {
+                const modal = document.getElementById("customModal");
+                const modalMessage = document.getElementById("modalMessage");
+                const okBtn = document.getElementById("modalOkBtn");
+                const cancelBtn = document.getElementById("modalCancelBtn");
+
+                modalMessage.textContent = message;
+                cancelBtn.classList.remove("hidden");
+                okBtn.textContent = "Ya";
+
+                modal.classList.remove("hidden");
+
+                okBtn.onclick = () => {
+                    modal.classList.add("hidden");
+                    resolve(true);
+                };
+                cancelBtn.onclick = () => {
+                    modal.classList.add("hidden");
+                    resolve(false);
+                };
+            });
+        }
+
+
+    </script>
+</body>
+
+</html>

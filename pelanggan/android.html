@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pelanggan Maju Makmur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Overlay */
+        .alert-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 9998;
+        }
+
+        /* Box style umum */
+        .alert-box,
+        .confirm-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px 25px;
+            width: 90%;
+            max-width: 380px;
+            border-radius: 12px;
+            z-index: 9999;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            animation: fadeIn 0.25s ease;
+            font-family: sans-serif;
+        }
+
+        /* Title */
+        .alert-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Message */
+        .alert-message {
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        /* Buttons */
+        .alert-btn,
+        .confirm-ok,
+        .confirm-cancel {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .alert-btn,
+        .confirm-ok {
+            background: #2563eb;
+            color: white;
+        }
+
+        .confirm-cancel {
+            background: #e5e7eb;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -55%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Header Tetap -->
+    <div class="fixed top-0 left-0 right-0 bg-white shadow-lg z-10 p-2">
+        <div>
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-bold">Pelanggan Maju Makmur</h2>
+                <button onclick="openForm()"
+                    class="bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow text-sm">+</button>
+            </div>
+            <!-- Search -->
+            <input id="search" oninput="searchData()" placeholder="Cari pelanggan..."
+                class="w-full p-2 border rounded" />
+        </div>
+    </div>
+
+    <!-- Konten dengan scroll -->
+    <div class="pt-28 pb-4 px-4">
+        <!-- Daftar Kartu Pelanggan -->
+        <div id="dataPelanggan" class="grid grid-cols-1 gap-3"></div>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modalForm" class="fixed inset-0 bg-black/50 hidden flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-lg p-5 rounded-2xl shadow-xl">
+            <h3 class="text-xl font-bold mb-4" id="titleForm">Tambah Pelanggan</h3>
+
+            <form id="formPelanggan" class="grid grid-cols-1 gap-3" onsubmit="return false;">
+                <input type="hidden" id="pelanggan_id">
+
+                <div>
+                    <label class="font-semibold">Nama Pelanggan</label>
+                    <input type="text" id="nama" class="w-full p-2 border rounded">
+                    <p class="text-red-600 text-xs mt-1 hidden" id="err_nama">Nama wajib diisi</p>
+                </div>
+
+                <div>
+                    <label class="font-semibold">No Telepon</label>
+                    <input type="text" id="telepon" class="w-full p-2 border rounded">
+                </div>
+
+                <div>
+                    <label class="font-semibold">Alamat</label>
+                    <textarea id="alamat" class="w-full p-2 border rounded"></textarea>
+                </div>
+
+                <input type="hidden" id="aktif" value="1">
+
+                <div class="flex justify-end gap-2 mt-3">
+                    <button type="button" onclick="closeForm()" class="px-4 py-2 rounded border">Batal</button>
+                    <button type="button" onclick="simpan()" class="bg-blue-600 text-white px-4 py-2 rounded">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="android.js"></script>
+    <script src="alert.js"></script>
+</body>
+
+</html>

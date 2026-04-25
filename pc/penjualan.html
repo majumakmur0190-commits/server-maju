@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Data Penjualan</title> 
+    <link href="../css/pc.css" rel="stylesheet">
+    <style>
+        /* Custom scrollbar for item list */
+        .item-list-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .item-list-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .item-list-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .item-list-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen overflow-hidden font-sans">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Konten utama -->
+    <main class="ml-16 group-hover:ml-56 transition-all duration-300 p-4 h-full flex flex-col">
+        <div class="flex-shrink-0">
+            <!-- 🔍 Form Pencarian -->
+            <div class="flex items-center justify-between mb-6">
+                <input id="searchInput" type="text" placeholder="Cari penjualan (ID, User, Pelanggan)..."
+                    class="px-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+        </div>
+
+        <!-- 📋 Tabel Penjualan -->
+        <div class="flex-grow overflow-y-auto bg-white rounded-xl shadow flex flex-col">
+            <table class="min-w-full text-sm text-left text-gray-600">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th class="px-6 py-3">ID</th>
+                        <th class="px-6 py-3">Tanggal</th>
+                        <th class="px-6 py-3">User</th>
+                        <th class="px-6 py-3">Pelanggan</th>
+                        <th class="px-6 py-3">Total (Rp)</th>
+                        <th class="px-6 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="penjualanTable"></tbody>
+            </table>
+            <div class="mt-auto">
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="flex items-center justify-between p-4 border-t">
+                    <button id="prev-page" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+                    <span id="page-info" class="text-sm text-gray-700"></span>
+                    <button id="next-page" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Berikutnya</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./js/main.js"></script>
+    <script>
+        // Panggil fungsi dari main.js
+        initializeApp();
+
+        const API_URL_PENJUALAN = "../api/transaksi.php";
+
+        const penjualanTableBody = document.getElementById("penjualanTable");
+        const searchInput = document.getElementById("searchInput");
+
+        // Variabel untuk data dan paginasi
+        let allPenjualan = [];
+        let filteredPenjualan = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Elemen paginasi
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+
+        // Helper: Format angka ke Rupiah
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        };
+
+        // 🔹 Load Pelanggan untuk Dropdown
+
+        // 🔹 Ambil semua data penjualan
+        async function fetchAllPenjualan() {
+            penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Memuat...</td></tr>`;
+            
+            // Ambil data user dari session untuk filtering
+            const userDataString = sessionStorage.getItem('loggedInUser');
+            let apiUrlWithParams = API_URL_PENJUALAN;
+            if (userDataString) {
+                const user = JSON.parse(userDataString);
+                apiUrlWithParams += `?role=${user.role}&user_id=${user.id}`;
+            }
+
+            try {
+                const res = await fetch(apiUrlWithParams);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    allPenjualan = result.data;
+                    filterAndDisplayPenjualan(searchInput.value, 1);
+                } else {
+                    penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal terhubung ke server.</td></tr>`;
+            }
+        }
+
+        // 🔹 Filter dan tampilkan data berdasarkan halaman
+        function filterAndDisplayPenjualan(keyword = "", page = 1) {
+            currentPage = page;
+            const lowerKeyword = keyword.toLowerCase();
+
+            filteredPenjualan = allPenjualan.filter(p =>
+                p.penjualan_id.toString().includes(lowerKeyword) ||
+                p.user_nama.toLowerCase().includes(lowerKeyword) ||
+                (p.nama_pelanggan && p.nama_pelanggan.toLowerCase().includes(lowerKeyword))
+            );
+
+            const totalItems = filteredPenjualan.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedItems = filteredPenjualan.slice(startIndex, endIndex);
+
+            renderTable(paginatedItems);
+            renderPagination(totalItems, totalPages);
+        }
+
+        // 🔹 Render tabel
+        function renderTable(data) {
+            if (data.length === 0) {
+                penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Tidak ada data ditemukan.</td></tr>`;
+                return;
+            }
+
+            penjualanTableBody.innerHTML = data.map(p => {
+                const row = `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-6 py-3">${p.penjualan_id}</td>
+                        <td class="px-6 py-3">${new Date(p.tanggal).toLocaleString()}</td>
+                        <td class="px-6 py-3">${p.user_nama}</td>
+                        <td class="px-6 py-3">${p.nama_pelanggan || 'Umum'}</td>
+                        <td class="px-6 py-3 font-bold text-right">${formatRupiah(p.total)}</td>
+                        <td class="px-6 py-3 text-center space-x-1">
+                            <button onclick='editPenjualan(${p.penjualan_id})' class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">Edit/Detail</button>
+                            <button onclick='deletePenjualan(${p.penjualan_id})' class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                        </td>
+                    </tr>`;
+                return row;
+            }).join('');
+        }
+
+        // 🔹 Render kontrol paginasi
+        function renderPagination(totalItems, totalPages) {
+            if (totalPages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages} (${totalItems} item)`;
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        // 🔹 Pencarian realtime
+        searchInput.addEventListener("input", e => {
+            filterAndDisplayPenjualan(e.target.value, 1);
+        });
+
+        // 🔹 Edit Penjualan
+        function editPenjualan(id) {
+            window.location.href = `transaksi.html?id=${id}`;
+        }
+
+        // 🔹 Hapus Data Penjualan
+        async function deletePenjualan(id) {
+            customConfirm("Yakin ingin menghapus penjualan ini? Stok barang akan dikembalikan.", async () => {
+                const res = await fetch(`${API_URL_PENJUALAN}?id=${id}`, { 
+                    method: "DELETE",
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const result = await res.json();
+                customAlert(result.message || "Penjualan berhasil dihapus!");
+                fetchAllPenjualan(); // Muat ulang semua data
+            });
+        }
+
+        // 🔹 Event Listener untuk tombol paginasi
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) filterAndDisplayPenjualan(searchInput.value, currentPage - 1);
+        });
+        nextButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredPenjualan.length / itemsPerPage);
+            if (currentPage < totalPages) filterAndDisplayPenjualan(searchInput.value, currentPage + 1);
+        });
+
+
+        // 🔹 Load data awal
+        fetchAllPenjualan();
+    </script>
+</body>
+
+</html>

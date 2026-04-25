@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Kategori</title>
+  <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+  <style>
+    body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+    .selected-row { background-color: #7078ee !important; }
+    #sidebar-container { width: 100%; flex-shrink: 0; }
+    main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+  </style>
+</head>
+
+<body>
+  <!-- Topbar / Sidebar -->
+  <div id="sidebar-container"></div>
+
+  <!-- Konten utama -->
+  <main>
+    <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+      <div class="title-bar">
+        <div class="title-bar-text">Data Kategori</div>
+        <div class="title-bar-controls">
+          <button aria-label="Minimize"></button>
+          <button aria-label="Maximize"></button>
+          <button aria-label="Close"></button>
+        </div>
+      </div>
+      <div class="window-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+      <!-- 🔍 Form Pencarian -->
+        <div style="display: flex; justify-content: space-between; padding: 10px; padding-bottom: 0; margin-bottom: 10px;">
+          <input id="searchInput" type="text" placeholder="Cari kategori..." style="width: 300px;" />
+          <button onclick="openForm()">+ Tambah Kategori</button>
+        </div>
+
+    <!-- 📋 Tabel Kategori -->
+        <div style="flex: 1; overflow: auto; border: 1px solid #8e8f8f; background: white;">
+          <table style="width: 100%;">
+            <thead>
+          <tr onclick="warnabaris(this)">
+                <th>NO</th>
+                <th>ID</th>
+                <th>Nama Kategori</th>
+                <th>Deskripsi</th>
+                <th style="text-align: center;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="kategoriTable"></tbody>
+      </table>
+        </div>
+        <!-- Pagination Controls -->
+        <div id="pagination-controls" style="padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <button id="prev-page">Sebelumnya</button>
+          <span id="page-info"></span>
+          <button id="next-page">Berikutnya</button>
+      </div>
+    </div>
+    </div>
+  </main>
+
+  <!-- 🧾 Modal Form -->
+  <div id="formModal" class="modal-overlay">
+    <div class="window" style="width: 400px;">
+      <div class="title-bar">
+        <div class="title-bar-text" id="formTitle">Tambah Kategori</div>
+        <div class="title-bar-controls">
+          <button aria-label="Close" onclick="closeForm()"></button>
+        </div>
+      </div>
+      <div class="window-body">
+        <form id="kategoriForm">
+        <input type="hidden" id="kategori_id" />
+          <div class="field-row-stacked">
+            <label for="nama_kategori">Nama Kategori</label>
+            <input id="nama_kategori" type="text" style="width: 100%;" required />
+        </div>
+          <div class="field-row-stacked">
+            <label for="deskripsi">Deskripsi</label>
+            <textarea id="deskripsi" rows="3" style="width: 100%;"></textarea>
+        </div>
+          <div style="margin-top: 15px; text-align: right;">
+            <button type="button" onclick="closeForm()">Batal</button>
+            <button type="submit" class="default">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  </div>
+  <script src="./js/main.js"></script>
+  <script>
+    initializeApp(); // Panggil fungsi dari main.js
+
+    const SERVER_IP = localStorage.getItem('server_ip') || 'localhost';
+    const apiUrl = `http://${SERVER_IP}:1987/maju/api/kategori.php`;
+    const tableBody = document.getElementById("kategoriTable");
+    const formModal = document.getElementById("formModal");
+    const form = document.getElementById("kategoriForm");
+
+    // Variabel untuk data dan paginasi
+    let allKategori = [];
+    let filteredKategori = [];
+    let currentPage = 1;
+    const itemsPerPage = parseInt(localStorage.getItem('pagination_limit')) || 10;
+
+    // Elemen paginasi
+    const paginationControls = document.getElementById('pagination-controls');
+    const prevButton = document.getElementById('prev-page');
+    const nextButton = document.getElementById('next-page');
+    const pageInfo = document.getElementById('page-info');
+
+    // 🔹 Ambil semua data
+    async function fetchAllKategori() {
+      tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Memuat data...</td></tr>`;
+      const res = await fetch(apiUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const dataori = await res.json();
+      if (dataori.status === 'success' && dataori.data) {
+        allKategori = dataori.data;
+        filterAndDisplayKategori();
+      } else {
+        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Gagal memuat data.</td></tr>`;
+      }
+    }
+
+    // 🔹 Filter dan tampilkan data berdasarkan halaman
+    function filterAndDisplayKategori(keyword = "", page = 1) {
+      currentPage = page;
+      const lowerKeyword = keyword.toLowerCase();
+
+      filteredKategori = allKategori.filter(k =>
+        k.nama_kategori.toLowerCase().includes(lowerKeyword) ||
+        (k.deskripsi && k.deskripsi.toLowerCase().includes(lowerKeyword))
+      );
+
+      const totalItems = filteredKategori.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedItems = filteredKategori.slice(startIndex, endIndex);
+
+      renderTable(paginatedItems, startIndex);
+      renderPagination(totalItems, totalPages);
+    }
+
+    // 🔹 Render tabel
+    function renderTable(data, startIndex) {
+      // console.log(data);
+      tableBody.innerHTML = "";
+      if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Tidak ada data</td></tr>`;
+        return;
+      }
+
+      data.forEach((k, index) => {
+        const row = `
+          <tr>
+            <td>${startIndex + index + 1}</td>
+            <td>${k.kategori_id}</td>
+            <td>${k.nama_kategori}</td>
+            <td>${k.deskripsi || ''}</td>
+            <td style="text-align: center;">
+              <button onclick='editKategori(${JSON.stringify(k)})'>Edit</button>
+            </td>
+          </tr>`;
+        tableBody.innerHTML += row;
+      });
+    }
+    function clearSelectedRows() {
+      document.querySelectorAll("#kategoriTable tr").forEach(r => {
+        r.classList.remove("selected-row");
+      });
+    }
+
+    function warnabaris(row) {
+      const isSelected = row.classList.contains("selected-row");
+
+      clearSelectedRows();
+
+      if (!isSelected) {
+        row.classList.add("selected-row");
+      }
+    }
+
+    //tombol hapus dihilangkan
+    // <button onclick='deleteKategori(${k.kategori_id})' class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Hapus</button>
+
+    // 🔹 Render kontrol paginasi
+    function renderPagination(totalItems, totalPages) {
+      if (totalPages > 1) {
+        paginationControls.style.display = 'flex';
+        pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages;
+      } else {
+        paginationControls.style.display = 'none';
+      }
+    }
+
+    // 🔹 Pencarian realtime
+    document.getElementById("searchInput").addEventListener("input", e => {
+      filterAndDisplayKategori(e.target.value, 1); // Selalu kembali ke halaman 1 saat mencari
+    });
+
+    // 🔹 Buka & Tutup Form
+    function openForm() {
+      form.reset();
+      document.getElementById("kategori_id").value = "";
+      document.getElementById("formTitle").textContent = "Tambah Kategori";
+      formModal.style.display = "flex";
+    }
+
+    function closeForm() {
+      formModal.style.display = "none";
+    }
+
+    // 🔹 Edit Kategori
+    function editKategori(k) {
+      openForm();
+      document.getElementById("formTitle").textContent = "Edit Kategori";
+      document.getElementById("kategori_id").value = k.kategori_id;
+      document.getElementById("nama_kategori").value = k.nama_kategori;
+      document.getElementById("deskripsi").value = k.deskripsi;
+    }
+
+    // 🔹 Simpan Data
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const submitButton = form.querySelector('button[type="submit"]');
+      const id = document.getElementById("kategori_id").value;
+      const nama = document.getElementById("nama_kategori").value;
+      const desk = document.getElementById("deskripsi").value;
+
+      const dataToSend = {
+        nama_kategori: nama,
+        deskripsi: desk
+      };
+
+      let url = apiUrl;
+      let method = "POST";
+
+      if (id) {
+        dataToSend.kategori_id = id; // Add ID to data for PUT request if needed by API logic
+        url = `${apiUrl}?id=${id}`; // Append ID to URL for PUT/DELETE
+        method = "PUT";
+      }
+
+      // Tampilkan loading
+      submitButton.disabled = true;
+      submitButton.textContent = 'Menyimpan...';
+
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(dataToSend)
+      });
+      const result = await res.json();
+
+      // Kembalikan tombol ke normal
+      submitButton.disabled = false;
+      submitButton.textContent = 'Simpan';
+
+      customAlert(result.message || "Data tersimpan!");
+      closeForm();
+      fetchAllKategori(); // Muat ulang semua data dari server
+    });
+
+    // 🔹 Hapus Data
+    async function deleteKategori(id) {
+      customConfirm("Yakin ingin menghapus data ini?", async () => {
+        const res = await fetch(`${apiUrl}?id=${id}`, {
+          method: "DELETE",
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const result = await res.json();
+        customAlert(result.message || "Data dihapus!");
+        fetchAllKategori(); // Muat ulang semua data dari server
+      });
+    }
+
+    // 🔹 Event Listener untuk tombol paginasi
+    prevButton.addEventListener('click', () => {
+      if (currentPage > 1) filterAndDisplayKategori(document.getElementById("searchInput").value, currentPage - 1);
+    });
+    nextButton.addEventListener('click', () => {
+      filterAndDisplayKategori(document.getElementById("searchInput").value, currentPage + 1);
+    });
+
+    // 🔹 Load data awal
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("#kategoriTable")) {
+        clearSelectedRows();
+      }
+    });
+
+    fetchAllKategori();
+  </script>
+</body>
+
+</html>

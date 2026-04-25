@@ -1,0 +1,11 @@
+{
+    "server_ip": "localhost",
+    "user": {
+        "id": 1,
+        "username": "admin",
+        "role": "admin"
+    },
+    "pagination_settings": {
+        "default_items_per_page": 35
+    }
+}

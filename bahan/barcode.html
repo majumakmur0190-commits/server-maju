@@ -1,0 +1,42 @@
+<input type="text" id="namaProduk" placeholder="Masukkan nama produk">
+<button onclick="cariProduk()">Cari Produk</button>
+
+<div id="hasil"></div>
+
+<script>
+    async function cariProduk() {
+        const namaProduk = document.getElementById("namaProduk").value;
+        const hasilDiv = document.getElementById("hasil");
+
+        // Kosongkan hasil sebelumnya
+        hasilDiv.innerHTML = "Loading...";
+
+        try {
+            const response = await fetch(
+                `https://api-products.alpha-projects.cloud/api/v1/products?name=${encodeURIComponent(namaProduk)}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Gagal mengambil data");
+            }
+
+            const data = await response.json();
+
+            // Contoh asumsi data berupa array
+            if (data.data && data.data.length > 0) {
+                hasilDiv.innerHTML = data.data.map(produk => `
+        <div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
+          <h3>${produk.name}</h3>
+          <p>Harga: ${produk.price}</p>
+          <p>Deskripsi: ${produk.description}</p>
+        </div>
+      `).join("");
+            } else {
+                hasilDiv.innerHTML = "Produk tidak ditemukan";
+            }
+
+        } catch (error) {
+            hasilDiv.innerHTML = "Terjadi kesalahan: " + error.message;
+        }
+    }
+</script>

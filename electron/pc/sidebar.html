@@ -1,0 +1,111 @@
+<!-- sidebar.html -->
+<div class="window active" style="display: flex; flex-direction: column; width: 100%; border: none; box-shadow: none; border-radius: 0;">
+    <!-- Title Bar Windows 7 -->
+    <div class="title-bar" id="app-title-bar">
+        <div class="title-bar-text">Aplikasi Penjualan</div>
+        <div class="title-bar-controls">
+            <button aria-label="Help"></button>
+            <button aria-label="Minimize"></button>
+            <button aria-label="Maximize" disabled=""></button>
+            <button aria-label="Close" onclick="window.close()"></button>
+        </div>
+    </div>
+
+    <!-- Menu Bar Horizontal -->
+    <ul role="menubar" class="can-hover" id="sidebar-menu">
+        <li role="menuitem" tabindex="0"><a href="index.html" data-page="index">Dashboard</a></li>
+        
+        <li role="menuitem" tabindex="0" aria-haspopup="true">
+            Penjualan
+            <ul role="menu">
+                <li role="menuitem"><a href="penjualan.html" data-page="penjualan">Riwayat Penjualan</a></li>
+                <li role="menuitem"><a href="transaksi.html" data-page="transaksi">Penjualan Baru</a></li>
+            </ul>
+        </li>
+
+        <li role="menuitem" tabindex="0" aria-haspopup="true">
+            Pembelian
+            <ul role="menu">
+                <li role="menuitem"><a href="pembelian.html" data-page="pembelian">Riwayat Pembelian</a></li>
+                <li role="menuitem"><a href="pembelian_baru.html" data-page="pembelian_baru">Pembelian Baru</a></li>
+            </ul>
+        </li>
+
+        <li role="menuitem" tabindex="0"><a href="pelanggan.html" data-page="pelanggan">Pelanggan</a></li>
+        <li role="menuitem" tabindex="0"><a href="suplier.html" data-page="suplier">Suplier</a></li>
+        <li role="menuitem" tabindex="0"><a href="tagihan.html" data-page="tagihan">Tagihan</a></li>
+        <li role="menuitem" tabindex="0"><a href="kategori.html" data-page="kategori">Kategori</a></li>
+        <li role="menuitem" tabindex="0"><a href="barang.html" data-page="barang">Barang</a></li>
+        <li role="menuitem" tabindex="0"><a href="users.html" data-page="users">Manajemen User</a></li>
+        <li role="menuitem" tabindex="0"><a href="laporan.html" data-page="laporan">Laporan</a></li>
+        <li role="menuitem" tabindex="0"><a href="setting.html" data-page="setting">Pengaturan</a></li>
+        
+        <li role="menuitem" tabindex="0" style="margin-left: auto;"><a href="#" id="logoutButton">Logout</a></li>
+    </ul>
+</div>
+
+<style>
+    /* Override Layout Global untuk mengubah Sidebar menjadi Topbar */
+    body {
+        flex-direction: column !important;
+    }
+    #sidebar-container {
+        width: 100% !important;
+        height: auto !important;
+        flex-shrink: 0;
+        z-index: 100;
+    }
+    
+    /* Sembunyikan Title Bar bawaan di setiap halaman konten karena sudah ada di atas */
+    main .window > .title-bar {
+        display: none !important;
+    }
+    
+    /* Reset style window di konten agar menyatu dengan frame utama */
+    main .window {
+        border: none !important;
+        box-shadow: none !important;
+        height: 100% !important;
+        background: transparent !important;
+    }
+    main .window-body {
+        margin: 0 !important;
+        border: 1px solid #8e8f8f !important;
+        background: #fff;
+        height: 100%;
+        overflow: auto;
+        box-shadow: inset 0 0 0 1px #fff;
+    }
+    
+    /* Pastikan dropdown menu tampil di atas konten */
+    ul[role="menubar"] {
+        z-index: 1000;
+    }
+    
+    /* Perbaikan tampilan link di dalam menu */
+    ul[role="menubar"] a {
+        color: inherit;
+        text-decoration: none;
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    #sidebar-menu > li.menu-active {
+        background: #1e3a8a;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    #sidebar-menu > li.menu-active > a {
+        color: inherit;
+    }
+
+    #sidebar-menu > li.menu-active > ul[role="menu"] a {
+        font-weight: normal;
+    }
+
+    ul[role="menu"] a {
+        padding: 0; /* Reset padding karena 7.css sudah mengatur padding li */
+    }
+</style>

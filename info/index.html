@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi API Aplikasi Maju</title>
+    <style>
+        :root {
+            --bg: #f3efe6;
+            --paper: #fffdf8;
+            --ink: #1d2a38;
+            --muted: #5d6a78;
+            --line: #d8cfbf;
+            --accent: #0d6b62;
+            --accent-2: #b35c2e;
+            --good: #166534;
+            --warn: #92400e;
+            --bad: #991b1b;
+            --shadow: 0 18px 40px rgba(29, 42, 56, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(13, 107, 98, 0.1), transparent 30%),
+                radial-gradient(circle at top right, rgba(179, 92, 46, 0.1), transparent 28%),
+                linear-gradient(180deg, #f8f4eb 0%, var(--bg) 100%);
+            line-height: 1.65;
+        }
+
+        .page {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 18px 60px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(13, 107, 98, 0.95), rgba(29, 42, 56, 0.94));
+            color: #fff;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            line-height: 1.05;
+        }
+
+        .hero p {
+            margin: 8px 0;
+            max-width: 900px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .panel,
+        .endpoint,
+        .file-card {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel,
+        .file-card {
+            padding: 22px;
+        }
+
+        h2,
+        h3,
+        h4 {
+            margin-top: 0;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 14px;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+        }
+
+        h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.76rem;
+            color: var(--accent-2);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .badge,
+        .method {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin: 0 6px 6px 0;
+        }
+
+        .method.get {
+            background: #dcfce7;
+            color: var(--good);
+        }
+
+        .method.post {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .method.put {
+            background: #fef3c7;
+            color: var(--warn);
+        }
+
+        .method.delete {
+            background: #fee2e2;
+            color: var(--bad);
+        }
+
+        .badge.info {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .badge.warn {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .badge.danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge.util {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .section {
+            margin-top: 24px;
+        }
+
+        .endpoint {
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .url,
+        code {
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        .url {
+            display: block;
+            background: #f1ece2;
+            border: 1px solid #ddd1bb;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin: 10px 0 14px;
+            overflow-x: auto;
+            white-space: pre-line;
+        }
+
+        pre {
+            margin: 10px 0 14px;
+            background: #1d2a38;
+            color: #f9fafb;
+            padding: 14px;
+            border-radius: 14px;
+            overflow-x: auto;
+            font-size: 0.92rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.95rem;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--line);
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f1ece2;
+            text-align: left;
+        }
+
+        ul {
+            margin: 8px 0 0;
+            padding-left: 20px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .small {
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 640px) {
+            .page {
+                padding: 14px 12px 36px;
+            }
+
+            .hero,
+            .panel,
+            .endpoint,
+            .file-card {
+                padding: 18px;
+                border-radius: 16px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <section class="hero">
+            <div class="eyebrow">Audit Folder API</div>
+            <h1>Dokumentasi API Aplikasi Maju</h1>
+            <p>Dokumen ini dibuat dari pembacaan langsung semua file di folder <code>api</code>. Isinya mencakup endpoint utama, file utilitas, file cetak PDF, file debug, cara kirim data, dan bentuk response aktual.</p>
+            <p><strong>Base URL lokal:</strong> <code>/maju/api/</code>. Mayoritas endpoint menerima JSON melalui <code>Content-Type: application/json</code>, tetapi ada beberapa file lama yang menerima form biasa atau bahkan mengeluarkan HTML/PDF.</p>
+        </section>
+
+        <div class="grid">
+            <article class="panel">
+                <div class="eyebrow">Cara Pakai</div>
+                <h3>Format Request Umum</h3>
+                <ul>
+                    <li>Header paling sering dipakai: <code>Content-Type: application/json</code>.</li>
+                    <li>Data filter list dikirim lewat query string seperti <code>?id=</code>, <code>?search=</code>, <code>?page=</code>, <code>?limit=</code>.</li>
+                    <li>Data simpan atau update umumnya dikirim dalam JSON body.</li>
+                    <li>Banyak endpoint sudah menyiapkan <code>OPTIONS</code> untuk kebutuhan CORS.</li>
+                </ul>
+            </article>
+            <article class="panel">
+                <div class="eyebrow">Contoh Fetch</div>
+                <h3>Kirim JSON ke API</h3>
+<pre><code>fetch('/maju/api/barang.php', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    barcode: "899001",
+    nama_barang: "KOPI BUBUK",
+    kategori_id: 2,
+    harga_hna: 12000,
+    stok: 15,
+    satuan: "PCS"
+  })
+}).then(r => r.json()).then(console.log);</code></pre>
+            </article>
+            <article class="panel">
+                <div class="eyebrow">Contoh cURL</div>
+                <h3>Login API</h3>
+<pre><code>curl -X POST http://localhost/maju/api/login.php ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\":\"admin\",\"password\":\"12345\"}"</code></pre>
+            </article>
+        </div>
+
+        <section class="panel section">
+            <div class="eyebrow">Daftar Lengkap</div>
+            <h2>Semua File di Folder <code>api</code></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Jenis</th>
+                        <th>Fungsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>barang.php</code></td><td>API JSON</td><td>CRUD master barang.</td></tr>
+                    <tr><td><code>barang_scan.php</code></td><td>API JSON</td><td>Pencarian cepat barang untuk scanner/kasir.</td></tr>
+                    <tr><td><code>barcode.php</code></td><td>API JSON lama</td><td>Edit barcode dan cari barang/barcode berdasarkan <code>action</code>.</td></tr>
+                    <tr><td><code>db.php</code></td><td>Pendukung</td><td>Koneksi database <code>maju</code>.</td></tr>
+                    <tr><td><code>gambar.php</code></td><td>API JSON + file</td><td>Kelola gambar produk berbasis URL eksternal.</td></tr>
+                    <tr><td><code>histori.php</code></td><td>API JSON</td><td>Histori harga pelanggan.</td></tr>
+                    <tr><td><code>histori_pembelian.php</code></td><td>API JSON</td><td>Histori harga pembelian dari suplier.</td></tr>
+                    <tr><td><code>import.php</code></td><td>API JSON</td><td>Import massal barang.</td></tr>
+                    <tr><td><code>inventor.php</code></td><td>API JSON</td><td>Barang dengan barcode nol dan update barcode.</td></tr>
+                    <tr><td><code>invoice.php</code></td><td>API JSON</td><td>Data invoice penjualan siap cetak.</td></tr>
+                    <tr><td><code>kategori.php</code></td><td>API JSON</td><td>CRUD kategori.</td></tr>
+                    <tr><td><code>login.php</code></td><td>API JSON</td><td>Autentikasi user.</td></tr>
+                    <tr><td><code>order.php</code></td><td>HTML</td><td>Menampilkan tabel join database gudang dan maju.</td></tr>
+                    <tr><td><code>pass.php</code></td><td>Utilitas</td><td>Script ubah password admin.</td></tr>
+                    <tr><td><code>pelanggan.php</code></td><td>API JSON</td><td>CRUD pelanggan.</td></tr>
+                    <tr><td><code>pembelian.php</code></td><td>API JSON</td><td>CRUD pembelian dan update stok.</td></tr>
+                    <tr><td><code>print copy.php</code></td><td>PDF</td><td>Invoice PDF versi lama.</td></tr>
+                    <tr><td><code>print.php</code></td><td>PDF</td><td>Invoice PDF versi utama.</td></tr>
+                    <tr><td><code>printasli.php</code></td><td>PDF</td><td>Invoice PDF versi lain.</td></tr>
+                    <tr><td><code>printer-list.php</code></td><td>API JSON</td><td>Ambil daftar printer Windows.</td></tr>
+                    <tr><td><code>suplier.php</code></td><td>API JSON</td><td>CRUD suplier.</td></tr>
+                    <tr><td><code>sycn.php</code></td><td>API JSON</td><td>Sinkronisasi pelanggan offline.</td></tr>
+                    <tr><td><code>tagihan.php</code></td><td>API JSON</td><td>CRUD tagihan.</td></tr>
+                    <tr><td><code>terbilang.php</code></td><td>Internal</td><td>Fungsi angka ke kata tanpa output endpoint.</td></tr>
+                    <tr><td><code>test.php</code></td><td>API JSON</td><td>Endpoint tes koneksi.</td></tr>
+                    <tr><td><code>toko.php</code></td><td>API JSON</td><td>Katalog barang untuk toko.</td></tr>
+                    <tr><td><code>transaksi.php</code></td><td>API JSON</td><td>CRUD penjualan.</td></tr>
+                    <tr><td><code>transaksi_scanner.php</code></td><td>API JSON</td><td>CRUD penjualan versi scanner.</td></tr>
+                    <tr><td><code>users.php</code></td><td>API JSON</td><td>CRUD user.</td></tr>
+                    <tr><td><code>upload/</code></td><td>Folder file</td><td>Penyimpanan gambar hasil upload.</td></tr>
+                    <tr><td><code>upload/3_1030.webp</code></td><td>File gambar</td><td>Aset gambar produk.</td></tr>
+                    <tr><td><code>upload/100_1550.webp</code></td><td>File gambar</td><td>Aset gambar produk.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <h2>Endpoint Inti Aplikasi</h2>
+            <article class="endpoint">
+                <div class="eyebrow">Master Barang</div>
+                <h3><code>api/barang.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD barang aktif. Semua response dibungkus dengan format <code>{status, data/message}</code>.</p>
+                <span class="url">GET /maju/api/barang.php?id=5
+GET /maju/api/barang.php?search=kopi
+POST /maju/api/barang.php
+PUT /maju/api/barang.php?id=5
+DELETE /maju/api/barang.php?id=5</span>
+                <div class="two-col">
+                    <div>
+                        <h4>Cara Kirim Data</h4>
+                        <ul>
+                            <li><strong>GET:</strong> query string <code>id</code> atau <code>search</code>.</li>
+                            <li><strong>POST/PUT:</strong> JSON body dengan field <code>barcode</code>, <code>nama_barang</code>, <code>kategori_id</code>, <code>harga_hna</code>, <code>stok</code>, <code>satuan</code>.</li>
+                            <li><strong>DELETE:</strong> cukup kirim <code>?id=...</code>.</li>
+                        </ul>
+<pre><code>{
+  "barcode": "899001",
+  "nama_barang": "KOPI BUBUK",
+  "kategori_id": 2,
+  "harga_hna": 12000,
+  "stok": 15,
+  "satuan": "PCS"
+}</code></pre>
+                    </div>
+                    <div>
+                        <h4>Contoh Response</h4>
+<pre><code>{
+  "status": "success",
+  "data": [
+    {
+      "barang_id": 5,
+      "barcode": "899001",
+      "kategori_id": 2,
+      "harga_hna": 12000,
+      "stok": 15,
+      "aktif": 1
+    }
+  ]
+}</code></pre>
+                        <p class="small muted">DELETE adalah soft delete: <code>aktif</code> diubah menjadi 0.</p>
+                    </div>
+                </div>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Master Kategori</div>
+                <h3><code>api/kategori.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD kategori aktif. String dari JSON akan diubah menjadi huruf besar sebelum disimpan.</p>
+                <span class="url">GET /maju/api/kategori.php?search=minuman
+POST /maju/api/kategori.php</span>
+<pre><code>{
+  "nama_kategori": "MINUMAN",
+  "deskripsi": "PRODUK MINUMAN"
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "Kategori berhasil ditambahkan."
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Master Pelanggan</div>
+                <h3><code>api/pelanggan.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD pelanggan. Nama pelanggan otomatis diubah menjadi huruf besar.</p>
+                <span class="url">GET /maju/api/pelanggan.php?search=budi
+PUT /maju/api/pelanggan.php?id=7</span>
+<pre><code>{
+  "nama_pelanggan": "TOKO BUDI",
+  "alamat": "JL. MERDEKA",
+  "no_telepon": "08123456789"
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "data": [
+    {
+      "pelanggan_id": 7,
+      "nama_pelanggan": "TOKO BUDI",
+      "alamat": "JL. MERDEKA",
+      "no_telepon": "08123456789",
+      "aktif": 1
+    }
+  ]
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Master Suplier</div>
+                <h3><code>api/suplier.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD suplier. Saat POST, kode suplier dibuat otomatis seperti <code>SUP001</code>.</p>
+                <span class="url">GET /maju/api/suplier.php?page=1&amp;limit=10&amp;search=abadi
+POST /maju/api/suplier.php</span>
+<pre><code>{
+  "nama_suplier": "PT ABADI",
+  "alamat": "BANDUNG",
+  "telepon": "022123456",
+  "email": "sales@abadi.id"
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total_rows": 31,
+    "total_pages": 4
+  }
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Master User</div>
+                <h3><code>api/users.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD user. Password di-hash saat create dan saat field password diisi di update. GET tidak mengembalikan password.</p>
+                <span class="url">POST /maju/api/users.php
+PUT /maju/api/users.php?id=3</span>
+<pre><code>{
+  "username": "kasir01",
+  "password": "rahasia",
+  "nama": "KASIR 01",
+  "role": "kasir"
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "User berhasil ditambahkan."
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Autentikasi</div>
+                <h3><code>api/login.php</code></h3>
+                <span class="method post">POST</span>
+                <p>Login menerima JSON atau form biasa. Password dicek langsung atau dengan <code>password_verify</code>.</p>
+                <span class="url">POST /maju/api/login.php</span>
+<pre><code>{
+  "username": "admin",
+  "password": "12345"
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "Login berhasil!",
+  "data": {
+    "id": 1,
+    "username": "admin",
+    "role": "admin"
+  }
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Penjualan</div>
+                <h3><code>api/transaksi.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD penjualan. Stok barang berkurang saat POST, dipulihkan lalu dihitung ulang saat PUT, dan dikembalikan saat DELETE.</p>
+                <span class="url">GET /maju/api/transaksi.php?id=101
+GET /maju/api/transaksi.php?search=budi&amp;role=kasir&amp;user_id=3
+POST /maju/api/transaksi.php</span>
+                <div class="two-col">
+                    <div>
+                        <h4>Body POST/PUT</h4>
+<pre><code>{
+  "user_id": 1,
+  "pelanggan_id": 2,
+  "items": [
+    {
+      "detail_urut": 1,
+      "barang_id": 5,
+      "jumlah": 2,
+      "harga_satuan": 25000
+    },
+    {
+      "detail_urut": 2,
+      "barang_id": 8,
+      "jumlah": 1,
+      "harga_satuan": 7500
+    }
+  ]
+}</code></pre>
+                    </div>
+                    <div>
+                        <h4>Response Sukses</h4>
+<pre><code>{
+  "status": "success",
+  "message": "Penjualan berhasil ditambahkan.",
+  "penjualan_id": 102
+}</code></pre>
+                        <h4>Response Detail</h4>
+<pre><code>{
+  "status": "success",
+  "data": {
+    "penjualan_id": 102,
+    "user_nama": "KASIR 1",
+    "nama_pelanggan": "TOKO BUDI",
+    "details": [
+      {
+        "barang_id": 5,
+        "jumlah": 2,
+        "harga_satuan": "25000.00",
+        "subtotal": "50000.00"
+      }
+    ]
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Penjualan Versi Scanner</div>
+                <h3><code>api/transaksi_scanner.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>Logika stok sama seperti <code>transaksi.php</code>, tetapi list GET mendukung mode pagination jika <code>limit</code> dikirim.</p>
+                <span class="url">GET /maju/api/transaksi_scanner.php?page=1&amp;limit=20
+GET /maju/api/transaksi_scanner.php?id=102</span>
+<pre><code>{
+  "status": "success",
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total_rows": 120,
+    "total_pages": 6
+  }
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Pembelian</div>
+                <h3><code>api/pembelian.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>CRUD pembelian. Semua item wajib memiliki field <code>pembelian_expired</code>. Stok bertambah saat POST dan PUT, lalu dikurangi saat DELETE.</p>
+                <span class="url">POST /maju/api/pembelian.php
+PUT /maju/api/pembelian.php?id=88</span>
+<pre><code>{
+  "user_id": 1,
+  "suplier_id": 4,
+  "tanggal": "2026-03-09",
+  "keterangan": "PEMBELIAN AWAL",
+  "items": [
+    {
+      "barang_id": 5,
+      "jumlah": 10,
+      "harga_satuan": 10000,
+      "subtotal": 100000,
+      "pembelian_expired": "2026-12-31"
+    }
+  ]
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "Pembelian berhasil disimpan",
+  "id": 88
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Tagihan</div>
+                <h3><code>api/tagihan.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>Mengelola header tagihan dan detail tagihan. DELETE hanya menonaktifkan data lewat <code>tagihan_aktif = 0</code>.</p>
+                <span class="url">GET /maju/api/tagihan.php?id=10
+GET /maju/api/tagihan.php?page=1&amp;limit=10&amp;search=mingguan
+POST /maju/api/tagihan.php</span>
+<pre><code>{
+  "tagihan_nama": "TAGIHAN MINGGUAN",
+  "tagihan_tanggal": "2026-03-09",
+  "tagihan_setor": 50000,
+  "details": [
+    {
+      "tagihan_pelanggan_id": 7,
+      "tagihan_subtotal": 150000,
+      "tagihan_lunas": 0,
+      "penjualan_id": 101
+    }
+  ]
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "Tagihan berhasil dibuat.",
+  "id": 10
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Histori Harga Pelanggan</div>
+                <h3><code>api/histori.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <p>Endpoint ini memakai parameter <code>aksi</code>, bukan model REST penuh.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aksi</th>
+                            <th>Cara Kirim</th>
+                            <th>Fungsi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>?aksi=cari&amp;id_pelanggan=7</code></td><td>GET</td><td>Ambil semua histori pelanggan.</td></tr>
+                        <tr><td><code>?aksi=getHarga&amp;id_pelanggan=7&amp;id_barang=5</code></td><td>GET</td><td>Ambil harga terakhir.</td></tr>
+                        <tr><td><code>?aksi=saveHistori</code></td><td>POST JSON</td><td>Simpan atau update histori otomatis.</td></tr>
+                        <tr><td><code>?aksi=edit</code></td><td>POST JSON</td><td>Edit histori manual berdasarkan <code>id_histori</code>.</td></tr>
+                        <tr><td><code>?aksi=delete</code></td><td>POST JSON</td><td>Hapus histori berdasarkan <code>id_barang</code>.</td></tr>
+                        <tr><td><code>?aksi=hapus_barang&amp;barang_id=5</code></td><td>GET</td><td>Reset histori barang.</td></tr>
+                    </tbody>
+                </table>
+<pre><code>{
+  "pelanggan_id": 7,
+  "items": [
+    { "barang_id": 5, "harga_satuan": 12000 }
+  ]
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "Histori disimpan"
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Histori Harga Pembelian</div>
+                <h3><code>api/histori_pembelian.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <p>Mirip <code>histori.php</code>, tetapi berdasarkan suplier. Jika tanpa <code>aksi</code>, endpoint mengirim 100 histori terakhir.</p>
+                <span class="url">GET /maju/api/histori_pembelian.php?aksi=getHarga&amp;id_suplier=4&amp;id_barang=5
+POST /maju/api/histori_pembelian.php?aksi=saveHistori</span>
+<pre><code>{
+  "suplier_id": 4,
+  "items": [
+    { "barang_id": 5, "harga_satuan": 10000 }
+  ]
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "message": "Histori pembelian berhasil disimpan"
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Gambar Barang</div>
+                <h3><code>api/gambar.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <span class="method put">PUT</span>
+                <span class="method delete">DELETE</span>
+                <p>Mencari barang + gambar, upload gambar dari URL, dan hapus file gambar. File ini membutuhkan extension PHP GD aktif.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Route</th>
+                            <th>Body</th>
+                            <th>Response</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>GET ?action=search&amp;q=kopi</code></td>
+                            <td>Tidak ada</td>
+                            <td>Array barang dengan <code>nama_gambar</code> dan <code>gambar_url</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST/PUT ?action=insert_gambar</code> atau <code>update_gambar</code></td>
+                            <td>JSON: <code>barang_id</code>, <code>image_url</code></td>
+                            <td><code>{success:true,gambar_url:"..."}</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>DELETE ?action=delete</code></td>
+                            <td>JSON: <code>{"barang_id":5}</code></td>
+                            <td><code>{success:true}</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+<pre><code>{
+  "barang_id": 5,
+  "image_url": "https://contoh.com/gambar.jpg"
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Katalog Toko</div>
+                <h3><code>api/toko.php</code></h3>
+                <span class="method get">GET</span>
+                <p>List barang aktif untuk katalog toko, lengkap dengan URL gambar dan penanda <code>has_more</code>.</p>
+                <span class="url">GET /maju/api/toko.php?q=kopi&amp;page=1&amp;limit=10</span>
+<pre><code>{
+  "data": [
+    {
+      "barang_id": 5,
+      "nama_barang": "KOPI BUBUK",
+      "nama_gambar": "kopi_bubuk_5.webp",
+      "gambar_url": "http://localhost/maju/api/upload/kopi_bubuk_5.webp"
+    }
+  ],
+  "has_more": true
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Barang Scanner</div>
+                <h3><code>api/barang_scan.php</code></h3>
+                <span class="method get">GET</span>
+                <p>Pencarian cepat satu barang atau daftar ringkas barang aktif. Jika <code>search</code> dipakai, hasil dibatasi satu baris terbaru.</p>
+                <span class="url">GET /maju/api/barang_scan.php?search=899001
+GET /maju/api/barang_scan.php?id=5</span>
+<pre><code>{
+  "status": "success",
+  "data": [
+    {
+      "barang_id": 5,
+      "nama_barang": "KOPI BUBUK",
+      "stok": 15
+    }
+  ]
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Barcode Lama</div>
+                <h3><code>api/barcode.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <p>Endpoint lama yang memakai parameter <code>action</code>. Bisa menerima JSON atau form biasa.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Method</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>update-barcode</code></td><td>POST</td><td>Update barcode berdasarkan <code>barang_id</code>.</td></tr>
+                        <tr><td><code>get-all-barang</code></td><td>GET</td><td>Dimaksudkan mengambil semua barang, tetapi query source terlihat salah: <code>SELECT * FROM barang WHERE limit 1</code>.</td></tr>
+                        <tr><td><code>get-barang</code></td><td>GET</td><td>Ambil satu barang berdasarkan <code>barang_id</code>.</td></tr>
+                        <tr><td><code>search-barang</code></td><td>POST</td><td>Cari barang berdasarkan <code>nama_barang</code>.</td></tr>
+                        <tr><td><code>search-barcode</code></td><td>POST</td><td>Cari barang berdasarkan barcode.</td></tr>
+                    </tbody>
+                </table>
+<pre><code>{
+  "barang_id": 5,
+  "barcode": "899001"
+}</code></pre>
+<pre><code>{
+  "message": "Barcode berhasil diperbarui."
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Import Massal</div>
+                <h3><code>api/import.php</code></h3>
+                <span class="method post">POST</span>
+                <p>Import banyak data barang sekaligus dengan JSON body berisi array <code>rows</code>. Harga akan dinormalisasi menjadi angka bulat.</p>
+                <span class="url">POST /maju/api/import.php</span>
+<pre><code>{
+  "rows": [
+    {
+      "barang_id": 10,
+      "barcode": "899010",
+      "nama_barang": "TEH CELUP",
+      "kategori_id": 2,
+      "harga_hna": "2.500",
+      "stok": 30,
+      "satuan": "PCS",
+      "aktif": 1,
+      "created_at": "2026-03-09 10:00:00"
+    }
+  ]
+}</code></pre>
+<pre><code>{
+  "success": true,
+  "inserted": 1,
+  "errors": []
+}</code></pre>
+            </article>
+            <article class="endpoint">
+                <div class="eyebrow">Inventori Barcode Nol</div>
+                <h3><code>api/inventor.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <p>Modul untuk barang yang barcode-nya masih <code>0</code>. Berguna untuk input barcode manual.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cara Pakai</th>
+                            <th>Fungsi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>GET ?cari=kopi hitam</code></td><td>Cari multi kata pada nama barang, hanya untuk barang <code>barcode = 0</code>.</td></tr>
+                        <tr><td><code>GET ?id=5</code></td><td>Ambil satu barang berdasarkan ID.</td></tr>
+                        <tr><td>POST form dengan <code>update=1</code>, <code>barang_id</code>, <code>barcode</code></td><td>Update barcode barang.</td></tr>
+                        <tr><td>GET tanpa parameter</td><td>Ambil 50 barang barcode nol.</td></tr>
+                    </tbody>
+                </table>
+<pre><code>{
+  "status": "success",
+  "message": "Barcode berhasil diperbarui."
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Sinkronisasi Pelanggan</div>
+                <h3><code>api/sycn.php</code></h3>
+                <span class="method get">GET</span>
+                <span class="method post">POST</span>
+                <p>Nama file memang tertulis <code>sycn</code>. GET mengirim semua pelanggan, sedangkan POST menyinkronkan data pelanggan dari mode offline ke server.</p>
+                <span class="url">GET /maju/api/sycn.php
+POST /maju/api/sycn.php</span>
+<pre><code>{
+  "pelanggan": [
+    {
+      "pelanggan_id": 7,
+      "nama_pelanggan": "TOKO BUDI",
+      "alamat": "JL. MERDEKA",
+      "no_telepon": "08123456789",
+      "aktif": 1
+    }
+  ]
+}</code></pre>
+<pre><code>{
+  "status": "success",
+  "mode": "sync",
+  "inserted": 1,
+  "updated": 0,
+  "nochange": 0
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Invoice JSON</div>
+                <h3><code>api/invoice.php</code></h3>
+                <span class="method get">GET</span>
+                <p>Mengembalikan data penjualan dalam format siap cetak: header penjualan, daftar barang, total, dan hasil terbilang.</p>
+                <span class="url">GET /maju/api/invoice.php?id=101</span>
+<pre><code>{
+  "status": true,
+  "data": {
+    "penjualan": {
+      "penjualan_id": 101,
+      "tanggal": "2026-03-09 07:00:00",
+      "nama_pelanggan": "TOKO BUDI",
+      "kasir": "KASIR 1"
+    },
+    "barang": [
+      {
+        "no": 1,
+        "nama_barang": "KOPI BUBUK",
+        "qty": 2,
+        "harga": 25000,
+        "subtotal": 50000
+      }
+    ],
+    "total": 50000,
+    "terbilang": "Lima Puluh Ribu Rupiah"
+  }
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Debug Ringan</div>
+                <h3><code>api/test.php</code></h3>
+                <span class="method post">POST</span>
+                <p>Endpoint tes sederhana. Jika dipanggil dengan POST akan selalu menjawab bahwa koneksi tersambung.</p>
+                <span class="url">POST /maju/api/test.php</span>
+<pre><code>{
+  "status": "success",
+  "message": "Tersambung"
+}</code></pre>
+            </article>
+
+            <article class="endpoint">
+                <div class="eyebrow">Printer Windows</div>
+                <h3><code>api/printer-list.php</code></h3>
+                <span class="method get">GET</span>
+                <p>Menjalankan <code>wmic printer get name</code> dan mengembalikan array nama printer Windows yang terbaca di server.</p>
+                <span class="url">GET /maju/api/printer-list.php</span>
+<pre><code>[
+  "Microsoft Print to PDF",
+  "EPSON L3210 Series"
+]</code></pre>
+            </article>
+        </section>
+
+        <section class="section">
+            <h2>File Cetak, Utilitas, dan Non-JSON</h2>
+
+            <div class="file-card">
+                <h3><code>api/print.php</code></h3>
+                <span class="badge info">PDF</span>
+                <p>Menghasilkan invoice PDF menggunakan TCPDF. Input melalui query string <code>?id=penjualan_id</code>. Output langsung file PDF ke browser, bukan JSON.</p>
+                <span class="url">GET /maju/api/print.php?id=101</span>
+            </div>
+
+            <div class="file-card">
+                <h3><code>api/printasli.php</code></h3>
+                <span class="badge info">PDF</span>
+                <p>Versi lain invoice PDF. Tetap memakai query string <code>?id</code>, tetapi layout header, footer, dan tabel berbeda dari <code>print.php</code>.</p>
+            </div>
+
+            <div class="file-card">
+                <h3><code>api/print copy.php</code></h3>
+                <span class="badge warn">PDF lama</span>
+                <p>File cetak PDF versi lama atau percobaan. Masih memakai query string <code>?id</code> dan menampilkan PDF langsung.</p>
+            </div>
+
+            <div class="file-card">
+                <h3><code>api/order.php</code></h3>
+                <span class="badge warn">HTML</span>
+                <p>Bukan API JSON. File ini membuat koneksi PDO ke database <code>gudang</code>, join dengan database <code>maju</code>, lalu mengeluarkan tabel HTML hasil order.</p>
+                <span class="url">GET /maju/api/order.php</span>
+            </div>
+
+            <div class="file-card">
+                <h3><code>api/pass.php</code></h3>
+                <span class="badge danger">Bahaya</span>
+                <p>Script utilitas manual untuk mengganti password user <code>admin</code> menjadi <code>12345</code>. Saat file dibuka, update langsung dieksekusi. Output berupa plain text.</p>
+            </div>
+
+            <div class="file-card">
+                <h3><code>api/terbilang.php</code></h3>
+                <span class="badge util">Internal</span>
+                <p>Hanya berisi fungsi <code>angkaKeKata()</code>. Jika diakses langsung, file ini tidak dirancang sebagai endpoint yang mengembalikan data.</p>
+            </div>
+
+            <div class="file-card">
+                <h3><code>api/db.php</code></h3>
+                <span class="badge util">Internal</span>
+                <p>File koneksi MySQL utama ke database <code>maju</code> dengan host <code>localhost</code> dan user <code>root</code>. Hampir semua endpoint memanggil file ini.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Catatan Penting Dari Audit Source</h2>
+            <div class="grid">
+                <article class="panel">
+                    <h3>Perbedaan Format Request</h3>
+                    <ul>
+                        <li>Mayoritas endpoint CRUD memakai JSON body.</li>
+                        <li><code>login.php</code>, <code>barcode.php</code>, dan <code>inventor.php</code> masih bisa menerima form biasa.</li>
+                        <li><code>print*.php</code> dan <code>invoice.php</code> hanya butuh query string <code>id</code>.</li>
+                    </ul>
+                </article>
+                <article class="panel">
+                    <h3>Perbedaan Format Response</h3>
+                    <ul>
+                        <li>Banyak endpoint memakai format <code>{status, data}</code>.</li>
+                        <li><code>gambar.php</code> kadang mengembalikan array langsung atau <code>{success:true}</code>.</li>
+                        <li><code>printer-list.php</code> mengembalikan array murni.</li>
+                        <li><code>print*.php</code> menghasilkan PDF dan <code>order.php</code> menghasilkan HTML.</li>
+                    </ul>
+                </article>
+                <article class="panel">
+                    <h3>Temuan Khusus</h3>
+                    <ul>
+                        <li><code>barcode.php?action=get-all-barang</code> tampak salah query dan sangat mungkin gagal.</li>
+                        <li><code>sycn.php</code> kemungkinan salah eja nama file, tetapi memang itu file yang dipakai sekarang.</li>
+                        <li><code>pass.php</code> berisiko jika bisa diakses publik.</li>
+                        <li><code>gambar.php</code> membutuhkan extension GD dan izin tulis ke folder <code>api/upload</code>.</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>

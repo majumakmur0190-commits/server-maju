@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Import / Export Excel → tabel `barang` (Generate SQL)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            padding: 18px;
+            background: #f7f8fb;
+            color: #111
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 6px
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: 0 6px 18px rgba(20, 20, 50, 0.06);
+            margin-bottom: 12px
+        }
+
+        label {
+            display: block;
+            margin-top: 8px;
+            font-weight: 600
+        }
+
+        select,
+        input[type="file"],
+        button,
+        textarea {
+            font-size: 14px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            border: 1px solid #e6e9ef;
+            font-size: 13px;
+            text-align: left
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px
+        }
+
+        .small {
+            font-size: 12px;
+            color: #666
+        }
+
+        .map-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 6px
+        }
+
+        .map-row select {
+            flex: 1
+        }
+
+        textarea.sql {
+            width: 100%;
+            height: 220px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .notice {
+            font-size: 13px;
+            color: #666;
+            margin-top: 6px
+        }
+    </style>
+    <!-- SheetJS (xlsx) untuk membaca dan menulis Excel di browser -->
+    <!-- SheetJS harus dimuat dulu -->
+    <script src="xlsx.full.min.js"></script>
+
+    <!-- Baru kemudian script Anda -->
+    <script>
+        // Contoh penggunaan XLSX
+        console.log(typeof XLSX); // seharusnya tampil "object"
+    </script>
+
+</head>
+
+<body>
+
+    <h1>Import Excel → tabel <code>barang</code> (Generate SQL / Upload)</h1>
+    <div class="card">
+        <label>1) Pilih file Excel (.xlsx, .xls, .csv)</label>
+        <input id="file-input" type="file" accept=".xlsx,.xls,.csv" />
+
+        <div id="sheet-selector-div" style="display:none; margin-top:10px;">
+            <label>2) Pilih Sheet</label>
+            <select id="sheet-selector"></select>
+        </div>
+
+        <div class="controls">
+            <button id="btn-load" disabled>Load & Preview</button>
+            <button id="btn-export-excel" disabled>Export Preview → Excel</button>
+            <button id="btn-generate-sql" disabled>Generate .sql (download)</button>
+            <button id="btn-upload-server" disabled>Upload to Server (import.php)</button>
+        </div>
+
+        <p class="notice">Mapping kolom: pilih kolom Excel yang sesuai untuk setiap field tabel <code>barang</code>.</p>
+
+        <div id="mapping" style="margin-top:10px;"></div>
+
+    </div>
+
+    <div class="card" id="preview-card" style="display:none;">
+        <label>Preview (baris pertama dianggap data, bukan header)</label>
+        <div style="overflow:auto; max-height:360px;">
+            <table id="preview-table">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:8px;">
+            <label>Opsional: SQL yang akan di-download / dikirim ke server</label>
+            <textarea id="sql-area" class="sql" readonly></textarea>
+        </div>
+    </div>
+
+    <div class="card small">
+        <strong>Catatan penting:</strong>
+        <ul>
+            <li>Fungsi generate & upload mengasumsikan setiap baris Excel sudah berisi field:
+                <code>barang_id, nama_barang, kategori_id, harga_hna, diskon_beli, diskon_jual, stok, satuan, aktif, created_at</code>
+                — jika tidak, gunakan mapping di atas.
+            </li>
+            <li>Upload ke server mengirim data sebagai JSON ke <code>import.php</code>. Pastikan server dan import.php
+                aman dan tidak mengeksekusi SQL mentah dari client tanpa validasi.</li>
+            <li>Jika ingin langsung menjalankan .sql di database, impor file .sql melalui tool database Anda
+                (phpMyAdmin, MySQL CLI, dsb.).</li>
+        </ul>
+    </div>
+
+    <script>
+        /*
+          Flow:
+          - Load Excel via SheetJS
+          - Show sample header/rows
+          - Provide dropdowns to map Excel columns -> DB fields
+          - Allow preview adjustment
+          - Generate SQL statements (escaping)
+          - Allow download .sql or send JSON to server
+        */
+
+        const dbFields = ["barang_id", "barcode","nama_barang", "kategori_id", "harga_hna", "stok", "satuan", "aktif", "created_at"];
+
+        let workbook = null;
+        let sheetsData = []; // array of rows (objects keyed by headers)
+        let headers = [];    // detected headers (from file or generated: A,B...)
+        let rawRows = [];    // raw row arrays
+        let mappedRows = []; // after mapping
+
+        const fileInput = document.getElementById('file-input');
+        const btnLoad = document.getElementById('btn-load');
+        const btnExportExcel = document.getElementById('btn-export-excel');
+        const btnGenerateSQL = document.getElementById('btn-generate-sql');
+        const btnUploadServer = document.getElementById('btn-upload-server');
+        const mappingDiv = document.getElementById('mapping');
+        const sheetSelectorDiv = document.getElementById('sheet-selector-div');
+        const sheetSelector = document.getElementById('sheet-selector');
+        const previewCard = document.getElementById('preview-card');
+        const previewTable = document.getElementById('preview-table');
+        const sqlArea = document.getElementById('sql-area');
+
+        fileInput.addEventListener('change', () => {
+            btnLoad.disabled = !fileInput.files.length;
+        });
+
+        btnLoad.addEventListener('click', () => {
+            const f = fileInput.files[0];
+            if (!f) return alert('Pilih file lebih dulu.');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = e.target.result;
+                workbook = XLSX.read(data, { type: 'binary' });
+
+                // Isi dropdown sheet
+                sheetSelector.innerHTML = '';
+                workbook.SheetNames.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sheetSelector.appendChild(opt);
+                });
+
+                sheetSelectorDiv.style.display = 'block';
+
+                // Proses sheet pertama secara default
+                processSheet(workbook.SheetNames[0]);
+            };
+            reader.readAsBinaryString(f);
+        });
+
+        sheetSelector.addEventListener('change', () => {
+            processSheet(sheetSelector.value);
+        });
+
+        function processSheet(sheetName) {
+            if (!workbook || !sheetName) return;
+
+            const ws = workbook.Sheets[sheetName];
+            const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+            rawRows = aoa; // store
+            if (aoa.length > 0 && aoa[0].some(c => typeof c === 'string' && c.trim().length > 0)) {
+                headers = aoa[0].map(h => String(h).trim());
+                rawRows = aoa.slice(1);
+            } else {
+                headers = (aoa[0] || []).map((_, i) => 'COL' + (i + 1));
+            }
+
+            if (headers.length === 0 && rawRows.length > 0) {
+                const cols = rawRows[0].length;
+                headers = Array.from({ length: cols }, (_, i) => 'COL' + (i + 1));
+            }
+
+            buildMappingUI();
+            renderPreview(); // Ini akan memanggil generateSQLArea juga
+            previewCard.style.display = 'block';
+            btnExportExcel.disabled = false;
+            btnGenerateSQL.disabled = false;
+            btnUploadServer.disabled = false;
+        }
+
+        function buildMappingUI() {
+            mappingDiv.innerHTML = '';
+            mappingDiv.appendChild(Object.assign(document.createElement('div'), { innerHTML: `<strong>Mapping kolom</strong>` }));
+
+            // For each dbField, create select with headers
+            dbFields.forEach(field => {
+                const row = document.createElement('div');
+                row.className = 'map-row';
+                const label = document.createElement('label');
+                label.style.minWidth = '150px';
+                label.textContent = field;
+                const sel = document.createElement('select');
+                sel.dataset.field = field;
+                // default option empty
+                const optEmpty = document.createElement('option'); optEmpty.value = ''; optEmpty.textContent = '-- kosong / tidak ada --';
+                sel.appendChild(optEmpty);
+                headers.forEach(h => {
+                    const o = document.createElement('option'); o.value = h; o.textContent = h;
+                    sel.appendChild(o);
+                });
+
+                // Try intelligent defaults: map same-name headers
+                const guess = headers.find(h => h.toLowerCase().replace(/\s+/g, '').includes(field.replace(/_/g, '').toLowerCase()));
+                if (guess) sel.value = guess;
+
+                row.appendChild(label);
+                row.appendChild(sel);
+                mappingDiv.appendChild(row);
+            });
+
+            // Also allow user to reorder preview shown columns
+            const hint = document.createElement('div');
+            hint.className = 'small';
+            hint.style.marginTop = '8px';
+            hint.textContent = 'Jika file Anda tidak memiliki header, pilih mapping yang sesuai berdasarkan posisi kolom (COL1, COL2, ...).';
+            mappingDiv.appendChild(hint);
+        }
+
+        function renderPreview() {
+            // Build mappedRows according to current mapping
+            const selects = mappingDiv.querySelectorAll('select');
+            const map = {};
+            selects.forEach(s => { if (s.value) map[s.dataset.field] = s.value; else map[s.dataset.field] = null; });
+
+            // Convert rawRows (array of arrays) to objects keyed by headers
+            const rowsObjs = rawRows.map(rArr => {
+                const obj = {};
+                for (let i = 0; i < headers.length; i++) {
+                    obj[headers[i]] = (rArr[i] === undefined ? '' : rArr[i]);
+                }
+                return obj;
+            });
+
+            // build mappedRows (array of objects with dbFields keys)
+            mappedRows = rowsObjs.map(r => {
+                const out = {};
+                dbFields.forEach(f => {
+                    const headerName = map[f];
+                    let val = headerName ? r[headerName] : '';
+                    // basic normalize: trim strings
+                    if (typeof val === 'string') val = val.trim();
+                    out[f] = val;
+                });
+                return out;
+            });
+
+            // render table (show first 50 rows max)
+            const thead = previewTable.querySelector('thead');
+            const tbody = previewTable.querySelector('tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            // header row
+            const trh = document.createElement('tr');
+            dbFields.forEach(f => {
+                const th = document.createElement('th'); th.textContent = f; trh.appendChild(th);
+            });
+            thead.appendChild(trh);
+
+            const rowsToShow = mappedRows.slice(0, 200); // show up to 200
+            rowsToShow.forEach((r, idx) => {
+                const tr = document.createElement('tr');
+                dbFields.forEach(f => {
+                    const td = document.createElement('td');
+                    // Show small editable input for quick fix
+                    const input = document.createElement('input');
+                    input.style.width = '100%';
+                    input.value = r[f];
+                    input.dataset.row = idx;
+                    input.dataset.field = f;
+                    input.addEventListener('change', (e) => {
+                        const rowIndex = parseInt(e.target.dataset.row, 10);
+                        const fld = e.target.dataset.field;
+                        mappedRows[rowIndex][fld] = e.target.value.trim();
+                        generateSQLArea(); // update SQL preview
+                    });
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+
+            // store mappedRows globally
+            generateSQLArea();
+        }
+
+        mappingDiv.addEventListener('change', renderPreview);
+
+        // Helper: escape single quotes
+        function sqlEscape(val) {
+            if (val === null || val === undefined || val === '') return "''";
+            // detect numeric without thousands separator and not leading zeros
+            const asStr = String(val).trim();
+            if (asStr === '') return "''";
+            // treat numbers: if it matches optional minus and digits and optional .digits and no commas
+            if (/^-?\d+(\.\d+)?$/.test(asStr)) {
+                return asStr; // return as numeric literal (no quotes)
+            }
+            // if looks like date ISO yyyy-mm-dd or datetime yyyy-mm-dd hh:mm:ss allow quoted
+            // escape single quotes
+            const esc = asStr.replace(/'/g, "''");
+            return `'${esc}'`;
+        }
+
+        function generateSQLArea() {
+            if (!mappedRows || mappedRows.length === 0) { sqlArea.value = ''; return; }
+            const lines = [];
+            mappedRows.forEach(r => {
+                // if all fields empty -> skip
+                const allEmpty = dbFields.every(f => (r[f] === null || r[f] === ''));
+                if (allEmpty) return;
+                const values = dbFields.map(f => {
+                    // For created_at: if empty, default to CURRENT_TIMESTAMP -> represent as NOW()
+                    if (f === 'created_at') {
+                        const v = (r[f] === null || r[f] === '') ? 'NOW()' : sqlEscape(r[f]);
+                        return v;
+                    }
+                    // numeric? If empty put '' (empty string)
+                    return sqlEscape(r[f]);
+                });
+                const valsJoined = values.join(',');
+                const sql = "INSERT INTO `barang`(`" + dbFields.join("`,`") + "`) VALUES (" + valsJoined + ");";
+                lines.push(sql);
+            });
+            sqlArea.value = lines.join("\n");
+        }
+
+        // Buttons
+        btnGenerateSQL.addEventListener('click', () => {
+            const content = sqlArea.value;
+            if (!content) return alert('Belum ada SQL yang digenerate. Pastikan file dan mapping sudah benar.');
+            const blob = new Blob([content], { type: 'text/sql;charset=utf-8' });
+            const fname = 'import_barang_' + (new Date()).toISOString().slice(0, 19).replace(/:/g, '-') + '.sql';
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fname;
+            document.body.appendChild(a); a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        });
+
+        // Export preview back to Excel
+        btnExportExcel.addEventListener('click', () => {
+            if (!mappedRows || mappedRows.length === 0) return alert('Tidak ada data untuk diexport.');
+            // convert to sheet
+            const aoa = [dbFields].concat(mappedRows.map(r => dbFields.map(f => r[f])));
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'barang_preview');
+            XLSX.writeFile(wb, 'barang_preview_' + (new Date()).toISOString().slice(0, 19).replace(/:/g, '-') + '.xlsx');
+        });
+
+        // Upload to server as JSON (safer than raw SQL)
+        btnUploadServer.addEventListener('click', async () => {
+            if (!mappedRows || mappedRows.length === 0) return alert('Tidak ada data untuk diupload.');
+            // prepare payload: array of objects (only non-empty rows)
+            const payload = mappedRows.filter(r => !dbFields.every(f => r[f] === null || r[f] === ''));
+            if (!confirm('Kirim ' + payload.length + ' baris ke server untuk di-insert? (POST ke import.php)')) return;
+            try {
+                const resp = await fetch('../api/import.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows: payload })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert('Sukses: ' + data.inserted + ' baris diinsert.');
+                } else {
+                    alert('Gagal: ' + (data.error || JSON.stringify(data)));
+                }
+            } catch (err) {
+                alert('Terjadi kesalahan saat mengirim: ' + err.message);
+            }
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Aplikasi Penjualan</title>
+
+    <link href="../css/pc.css" rel="stylesheet">
+
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-sky-500 font-sans">
+    <div id="custom-modal-container"></div>
+
+
+    <!-- Card -->
+    <div
+        class="relative bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-3xl p-10 w-full max-w-md text-white transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-8">
+            <div
+                class="relative bg-white/20 rounded-full shadow-xl w-32 h-32 flex items-center justify-center overflow-hidden">
+                <!-- Efek glow -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-blue-400/40 to-indigo-500/30 blur-2xl rounded-full">
+                </div>
+
+                <!-- Logo -->
+                <img src="../gambar/logo.png" alt="Logo"
+                    class="relative z-10 w-full h-full object-cover rounded-full select-none">
+            </div>
+        </div>
+
+
+        <!-- form login  -->
+
+        <h1 class="text-3xl font-bold text-center mb-8 tracking-wide">Login Aplikasi</h1>
+
+        <form id="loginForm" class="space-y-6" novalidate>
+            <!-- Username -->
+            <div>
+                <label class="block mb-2 text-sm font-semibold text-gray-100">Username</label>
+                <input type="text" id="username" placeholder="Masukkan username"
+                    class="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-200 focus:outline-none focus:ring-2 focus:ring-accent transition">
+                <p id="usernameError" class="text-red-300 text-sm mt-1 hidden"></p>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label class="block mb-2 text-sm font-semibold text-gray-100">Password</label>
+                <input type="password" id="password" placeholder="Masukkan password"
+                    class="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-200 focus:outline-none focus:ring-2 focus:ring-accent transition">
+                <p id="passwordError" class="text-red-300 text-sm mt-1 hidden"></p>
+            </div>
+
+            <!-- Tombol -->
+            <button type="submit" id="loginBtn"
+                class="w-full py-3 bg-accent hover:bg-orange-500 text-white font-semibold rounded-lg shadow-lg transition transform hover:-translate-y-1 hover:shadow-orange-300/50">
+                Masuk
+            </button>
+        </form>
+
+
+        <!-- Glow effect -->
+        <div
+            class="absolute inset-0 rounded-3xl bg-gradient-to-tr from-white/10 via-transparent to-transparent blur-2xl -z-10">
+        </div>
+    </div>
+
+    <!-- ✅ Script Login -->
+    <script>
+        // ✅ Cek sesi sebelum menampilkan halaman login
+        // Jika sudah ada data login, langsung arahkan ke index.html
+        (function () {
+            if (sessionStorage.getItem('loggedInUser')) {
+                window.location.href = 'index.html';
+            }
+        })();
+
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const usernameError = document.getElementById("usernameError");
+        const passwordError = document.getElementById("passwordError");
+        const loginForm = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
+
+        function showError(el, msg) {
+            el.textContent = msg;
+            el.classList.remove("hidden");
+        }
+
+        function clearError(el) {
+            el.textContent = "";
+            el.classList.add("hidden");
+        }
+
+        // Validasi client-side sebelum submit
+        function validateForm() {
+            let valid = true;
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            // Username: wajib, minimal 3 karakter
+            if (!username) {
+                showError(usernameError, "Username wajib diisi.");
+                valid = false;
+            } else if (username.length < 3) {
+                showError(usernameError, "Username minimal 3 karakter.");
+                valid = false;
+            } else {
+                clearError(usernameError);
+            }
+
+            // Password: wajib, minimal 6 karakter
+            if (!password) {
+                showError(passwordError, "Password wajib diisi.");
+                valid = false;
+            } else if (password.length < 6) {
+                showError(passwordError, "Password minimal 6 karakter.");
+                valid = false;
+            } else {
+                clearError(passwordError);
+            }
+
+            // Nonaktifkan tombol saat invalid (opsional visual)
+            loginBtn.disabled = !valid;
+            if (loginBtn.disabled) {
+                loginBtn.classList.add("opacity-60", "cursor-not-allowed");
+            } else {
+                loginBtn.classList.remove("opacity-60", "cursor-not-allowed");
+            }
+
+            return valid;
+        }
+
+        // Validasi saat mengetik
+        usernameInput.addEventListener("input", validateForm);
+        passwordInput.addEventListener("input", validateForm);
+
+        // Submit handler (tetap menggunakan validasi)
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            try {
+                const res = await fetch("../api/login.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await res.json();
+
+                if (result.status === "success") {
+                    // ✅ Simpan data pengguna ke sessionStorage
+                    // Pastikan API login Anda mengembalikan data user dalam properti 'data'
+                    sessionStorage.setItem('loggedInUser', JSON.stringify(result.data));
+                    // Arahkan ke halaman utama setelah data disimpan
+                    window.location.href = "index.html";
+                } else {
+                    customAlert(result.message || "Login gagal, periksa kembali data Anda.");
+                }
+            } catch (error) {
+                customAlert("Gagal terhubung ke server. Pastikan XAMPP sedang berjalan.");
+                console.error(error);
+            }
+        });
+    </script>
+    <script>
+        // ✅ Custom Alert & Confirm Modal
+        (function () {
+            // Buat container global untuk modal
+            const modalContainer = document.createElement("div");
+            modalContainer.id = "custom-modal-container";
+            modalContainer.className = "fixed inset-0 flex items-center justify-center z-[9999] hidden";
+            document.body.appendChild(modalContainer);
+
+            // 🔹 Fungsi internal untuk buat modal HTML
+            function createModal({ title, message, buttons }) {
+                modalContainer.innerHTML = `
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-[90%] max-w-sm p-6 animate-fadeIn">
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">${title}</h2>
+        <p class="text-gray-600 mb-6">${message}</p>
+        <div class="flex justify-end gap-3">
+          ${buttons
+                        .map(
+                            (btn, i) => `
+              <button data-index="${i}" class="${btn.class}">
+                ${btn.text}
+              </button>`
+                        )
+                        .join("")}
+        </div>
+      </div>
+    `;
+
+                modalContainer.classList.remove("hidden");
+
+                // Tutup modal & trigger action tombol
+                modalContainer.querySelectorAll("button").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        modalContainer.classList.add("hidden");
+                        const i = btn.getAttribute("data-index");
+                        buttons[i].onClick && buttons[i].onClick();
+                    });
+                });
+            }
+
+            // 🔔 Alert sederhana
+            window.customAlert = function (message, title = "Pemberitahuan", onClose) {
+                createModal({
+                    title,
+                    message,
+                    buttons: [
+                        {
+                            text: "OK",
+                            class:
+                                "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition",
+                            onClick: onClose, // ✅ Jalankan callback saat tombol OK diklik
+                        },
+                    ],
+                });
+            };
+
+            // ❓ Confirm dengan callback true/false
+            window.customConfirm = function (
+                message,
+                onConfirm,
+                onCancel,
+                title = "Konfirmasi"
+            ) {
+                createModal({
+                    title,
+                    message,
+                    buttons: [
+                        {
+                            text: "Batal",
+                            class:
+                                "bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold transition",
+                            onClick: onCancel,
+                        },
+                        {
+                            text: "Ya",
+                            class:
+                                "bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition",
+                            onClick: onConfirm,
+                        },
+                    ],
+                });
+            };
+
+            // 🔧 Animasi Tailwind custom
+            const style = document.createElement("style");
+            style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+  `;
+            document.head.appendChild(style);
+        })();
+    </script>
+</body>
+
+</html>

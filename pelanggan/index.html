@@ -1,0 +1,20 @@
+<script>
+    function redirectByDevice() {
+        const ua = navigator.userAgent.toLowerCase();
+
+        // Jika Android
+        if (/android/.test(ua)) {
+            window.location.href = "android.html";
+        }
+        // Jika komputer (Windows, Mac, Linux)
+        else if (/windows|macintosh|linux/.test(ua)) {
+            window.location.href = "komputer.html";
+        }
+        // Jika device lain (iPhone, iPad, dll)
+        else {
+            window.location.href = "komputer.html";
+        }
+    }
+
+    redirectByDevice();
+</script>

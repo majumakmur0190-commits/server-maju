@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <title>Data Tagihan</title>
+    <link href="../css/pc.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden font-sans">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Konten utama -->
+    <main class="ml-16 group-hover:ml-56 transition-all duration-300 p-4 overflow-y-auto h-full">
+        <!-- 🔍 Form Pencarian & Tombol Tambah -->
+        <div class="flex items-center justify-between mb-6">
+            <input id="searchInput" type="text" placeholder="Cari nama tagihan..."
+                class="px-4 py-2 border rounded-lg w-1/3 focus:outline-none focus:ring-2 focus:ring-primary" />
+            <a href="tagihan_baru.html" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary">
+                + Tambah Tagihan
+            </a>
+        </div>
+
+        <!-- 📋 Tabel Tagihan -->
+        <div class="overflow-x-auto bg-white rounded-xl shadow">
+            <table class="min-w-full text-sm text-left text-gray-600">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th class="px-6 py-3">ID</th>
+                        <th class="px-6 py-3">Tanggal</th>
+                        <th class="px-6 py-3">Nama Tagihan</th>
+                        <th class="px-6 py-3 text-center">Jumlah Pelanggan</th>
+                        <th class="px-6 py-3 text-right">Total Tagihan</th>
+                        <th class="px-6 py-3 text-right">Total Setor</th>
+                        <th class="px-6 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tagihanTable"></tbody>
+            </table>
+            <!-- Pagination Controls -->
+            <div id="pagination-controls" class="flex items-center justify-between p-4 border-t">
+                <button id="prev-page" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+                <span id="page-info" class="text-sm text-gray-700"></span>
+                <button id="next-page" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">Berikutnya</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp();
+
+        const apiUrl = "../api/tagihan.php";
+        const tableBody = document.getElementById("tagihanTable");
+        const searchInput = document.getElementById("searchInput");
+
+        let currentPage = 1;
+        const limit = 10;
+
+        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+
+        async function fetchTagihan(page = 1, search = "") {
+            currentPage = page;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Memuat...</td></tr>`;
+            try {
+                const url = `${apiUrl}?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+                const res = await fetch(url);
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    renderTable(result.data);
+                    renderPagination(result.pagination);
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal terhubung.</td></tr>`;
+            }
+        }
+
+        function renderTable(data) {
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Tidak ada data.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = data.map(t => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-6 py-3">${t.tagihan_id}</td>
+                    <td class="px-6 py-3">${t.tagihan_tanggal ? new Date(t.tagihan_tanggal).toLocaleDateString('id-ID') : '-'}</td>
+                    <td class="px-6 py-3 font-medium">${t.tagihan_nama}</td>
+                    <td class="px-6 py-3 text-center">${t.tagihan_jumlah}</td>
+                    <td class="px-6 py-3 text-right">${formatRupiah(t.tagihan_total)}</td>
+                    <td class="px-6 py-3 text-right">${formatRupiah(t.tagihan_setor)}</td>
+                    <td class="px-6 py-3 text-center space-x-2">
+                        <button onclick="editTagihan(${t.tagihan_id})" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">Detail</button>
+                        <button onclick="deleteTagihan(${t.tagihan_id})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(pagination) {
+            const { page, total_pages, total_rows } = pagination;
+            const paginationControls = document.getElementById('pagination-controls');
+            const pageInfo = document.getElementById('page-info');
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            if (total_pages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${page} dari ${total_pages} (${total_rows} item)`;
+                prevButton.disabled = page <= 1;
+                nextButton.disabled = page >= total_pages;
+
+                prevButton.onclick = () => fetchTagihan(page - 1, searchInput.value);
+                nextButton.onclick = () => fetchTagihan(page + 1, searchInput.value);
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        function editTagihan(id) {
+            window.location.href = `tagihan_baru.html?id=${id}`;
+        }
+
+        async function deleteTagihan(id) {
+            customConfirm("Yakin ingin menghapus tagihan ini?", async () => {
+                try {
+                    const res = await fetch(`${apiUrl}?id=${id}`, { method: "DELETE" });
+                    const result = await res.json();
+                    customAlert(result.message);
+                    fetchTagihan(currentPage, searchInput.value);
+                } catch (error) {
+                    customAlert("Gagal menghapus tagihan.", "error");
+                }
+            });
+        }
+
+        let searchTimeout;
+        searchInput.addEventListener("input", e => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchTagihan(1, e.target.value);
+            }, 300);
+        });
+
+        fetchTagihan(1, "");
+    </script>
+</body>
+</html>

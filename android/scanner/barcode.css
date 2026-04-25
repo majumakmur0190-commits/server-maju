@@ -1,0 +1,78 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    padding: 5px;
+}
+
+.search-container {
+    margin-bottom: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #e73a3a;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+#searchInput {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.barang-list {
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.barang-item {
+    padding: 10px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modal */
+.modal,
+.alert-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.modal-content,
+.alert-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    max-width: 90%;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    box-sizing: border-box;
+}
+
+.close {
+    float: right;
+    font-size: 20px;
+    cursor: pointer;
+}

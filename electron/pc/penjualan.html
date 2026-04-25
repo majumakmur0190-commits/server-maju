@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Data Penjualan</title>
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background-color: #5ea0d6;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        #sidebar-container {
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        main {
+            flex-grow: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom scrollbar for item list */
+        .item-list-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .item-list-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .item-list-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .item-list-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #8e8f8f;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+            padding: 2px;
+        }
+
+        .context-menu-item {
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .context-menu-item:hover {
+            background-color: #2f71cd;
+            color: white;
+        }
+
+        .selected-row {
+            background-color: #7078ee !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+ 
+    <!-- Konten utama -->
+    <main>
+        <div class="window"
+            style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+            <div class="title-bar">
+                <div class="title-bar-text">Data Penjualan</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                    <button aria-label="Maximize"></button>
+                    <button aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="window-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- 🔍 Form Pencarian -->
+                <div style="margin-bottom: 10px;">
+                    <input id="searchInput" type="text" placeholder="Cari penjualan (ID, User, Pelanggan)..."
+                        style="width: 100%;" />
+                </div>
+
+                <!-- 📋 Tabel Penjualan -->
+                <div style="flex: 1; overflow: auto; border: 1px solid #8e8f8f; background: white;">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tanggal</th>
+                                <th>User</th>
+                                <th>Pelanggan</th>
+                                <th style="text-align: right;">Total (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="penjualanTable"></tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div id="pagination-controls"
+                    style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <button id="prev-page">Sebelumnya</button>
+                    <span id="page-info"></span>
+                    <button id="next-page">Berikutnya</button>
+                </div>
+            </div>
+    </main>
+
+    <!-- 🖱️ Custom Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item" id="menuDelete">Hapus</div>
+    </div>
+
+    <script src="./js/main.js"></script>
+    <script>
+        // Panggil fungsi dari main.js
+        initializeApp();
+
+        const SERVER_IP = localStorage.getItem('server_ip') || 'localhost';
+        const API_URL_PENJUALAN = `http://${SERVER_IP}:1987/maju/api/transaksi.php`;
+
+        const penjualanTableBody = document.getElementById("penjualanTable");
+        const searchInput = document.getElementById("searchInput");
+        const contextMenu = document.getElementById("contextMenu");
+
+        // Variabel untuk data dan paginasi
+        let allPenjualan = [];
+        let filteredPenjualan = [];
+        let currentPage = 1;
+        const itemsPerPage = parseInt(localStorage.getItem('pagination_limit')) || 10;
+
+        // Elemen paginasi
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+
+        // Helper: Format angka ke Rupiah
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        };
+
+        // 🔹 Load Pelanggan untuk Dropdown
+
+        // 🔹 Ambil semua data penjualan
+        async function fetchAllPenjualan() {
+            penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Memuat...</td></tr>`;
+
+            // Ambil data user dari session untuk filtering
+            const userDataString = sessionStorage.getItem('loggedInUser');
+            let apiUrlWithParams = API_URL_PENJUALAN;
+            if (userDataString) {
+                const user = JSON.parse(userDataString);
+                apiUrlWithParams += `?role=${user.role}&user_id=${user.id}`;
+            }
+
+            try {
+                const res = await fetch(apiUrlWithParams);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    allPenjualan = result.data;
+                    filterAndDisplayPenjualan(searchInput.value, 1);
+                } else {
+                    penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal terhubung ke server.</td></tr>`;
+            }
+        }
+
+        // 🔹 Filter dan tampilkan data berdasarkan halaman
+        function filterAndDisplayPenjualan(keyword = "", page = 1) {
+            currentPage = page;
+            const lowerKeyword = keyword.toLowerCase();
+
+            filteredPenjualan = allPenjualan.filter(p =>
+                p.penjualan_id.toString().includes(lowerKeyword) ||
+                p.user_nama.toLowerCase().includes(lowerKeyword) ||
+                (p.nama_pelanggan && p.nama_pelanggan.toLowerCase().includes(lowerKeyword))
+            );
+
+            const totalItems = filteredPenjualan.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedItems = filteredPenjualan.slice(startIndex, endIndex);
+
+            renderTable(paginatedItems);
+            renderPagination(totalItems, totalPages);
+        }
+
+        // 🔹 Render tabel
+        function renderTable(data) {
+            if (data.length === 0) {
+                penjualanTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Tidak ada data ditemukan.</td></tr>`;
+                return;
+            }
+
+            penjualanTableBody.innerHTML = data.map(p => `
+                    <tr 
+                    onclick="warnabaris(this)" 
+                    ondblclick="editPenjualan(${p.penjualan_id})"
+                    oncontextmenu="showContextMenu(event, ${p.penjualan_id})"
+                    >
+                        <td>${p.penjualan_id}</td>
+                        <td>${new Date(p.tanggal).toLocaleString()}</td>
+                        <td>${p.user_nama}</td>
+                        <td>${p.nama_pelanggan || 'Umum'}</td>
+                        <td style="text-align: right;">${formatRupiah(p.total)}</td>
+                    </tr>
+                    `).join('');
+        }
+
+        function clearSelectedRows() {
+            document.querySelectorAll("#penjualanTable tr").forEach(r => {
+                r.classList.remove("selected-row");
+            });
+        }
+
+        function warnabaris(row) {
+            const isSelected = row.classList.contains("selected-row");
+
+            clearSelectedRows();
+
+            if (!isSelected) {
+                row.classList.add("selected-row");
+            }
+        }
+
+        // 🔹 Render kontrol paginasi
+        function renderPagination(totalItems, totalPages) {
+            if (totalPages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages} (${totalItems} item)`;
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        // 🔹 Pencarian realtime
+        searchInput.addEventListener("input", e => {
+            filterAndDisplayPenjualan(e.target.value, 1);
+        });
+
+        // 🔹 Edit Penjualan
+        function editPenjualan(id) {
+            window.location.href = `transaksi.html?id=${id}`;
+        }
+
+        // 🔹 Context Menu Logic
+        function showContextMenu(e, id) {
+            e.preventDefault();
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.display = "block";
+
+            const menuDelete = document.getElementById("menuDelete");
+            menuDelete.onclick = (event) => {
+                event.stopPropagation();
+                deletePenjualan(id);
+                contextMenu.style.display = "none";
+            };
+        }
+
+        document.addEventListener("click", (event) => {
+            contextMenu.style.display = "none";
+
+            if (!event.target.closest("#penjualanTable")) {
+                clearSelectedRows();
+            }
+        });
+
+        // 🔹 Hapus Data Penjualan
+        async function deletePenjualan(id) {
+            customConfirm("Yakin ingin menghapus penjualan ini? Stok barang akan dikembalikan.", async () => {
+                const res = await fetch(`${API_URL_PENJUALAN}?id=${id}`, {
+                    method: "DELETE",
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const result = await res.json();
+                customAlert(result.message || "Penjualan berhasil dihapus!");
+                fetchAllPenjualan(); // Muat ulang semua data
+            });
+        }
+
+        // 🔹 Event Listener untuk tombol paginasi
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) filterAndDisplayPenjualan(searchInput.value, currentPage - 1);
+        });
+        nextButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredPenjualan.length / itemsPerPage);
+            if (currentPage < totalPages) filterAndDisplayPenjualan(searchInput.value, currentPage + 1);
+        });
+
+
+        // 🔹 Load data awal
+        fetchAllPenjualan();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+{
+  "serverIp": "localhost",
+  "paginationLimit": 30,
+  "userData": {
+    "id": 1,
+    "username": "admin",
+    "role": "admin"
+  }
+}

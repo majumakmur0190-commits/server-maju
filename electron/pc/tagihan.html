@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <title>Data Tagihan</title>
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+        .selected-row { background-color: #7078ee !important; }
+        #sidebar-container { width: 100%; flex-shrink: 0; }
+        main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+    <!-- Konten utama -->
+    <main>
+        <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+            <div class="title-bar">
+                <div class="title-bar-text">Data Tagihan</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                    <button aria-label="Maximize"></button>
+                    <button aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="window-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- 🔍 Form Pencarian & Tombol Tambah -->
+                <div style="display: flex; justify-content: space-between; padding: 10px; padding-bottom: 0; margin-bottom: 10px;">
+                    <input id="searchInput" type="text" placeholder="Cari nama tagihan..." style="width: 300px;" />
+                    <a href="tagihan_baru.html"><button>+ Tambah Tagihan</button></a>
+                </div>
+
+        <!-- 📋 Tabel Tagihan -->
+                <div style="flex: 1; overflow: auto; border: 1px solid #8e8f8f; background: white;">
+                    <table style="width: 100%;">
+                        <thead>
+                    <tr>
+                                <th>ID</th>
+                                <th>Tanggal</th>
+                                <th>Nama Tagihan</th>
+                                <th style="text-align: center;">Jumlah Pelanggan</th>
+                                <th style="text-align: right;">Total Tagihan</th>
+                                <th style="text-align: right;">Total Setor</th>
+                                <th style="text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tagihanTable"></tbody>
+            </table>
+                </div>
+            <!-- Pagination Controls -->
+                <div id="pagination-controls" style="padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <button id="prev-page">Sebelumnya</button>
+                    <span id="page-info"></span>
+                    <button id="next-page">Berikutnya</button>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp();
+
+        const SERVER_IP = localStorage.getItem('server_ip') || 'localhost';
+        const apiUrl = `http://${SERVER_IP}:1987/maju/api/tagihan.php`;
+        const tableBody = document.getElementById("tagihanTable");
+        const searchInput = document.getElementById("searchInput");
+
+        let currentPage = 1;
+        const limit = parseInt(localStorage.getItem('pagination_limit')) || 10;
+
+        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+
+        async function fetchTagihan(page = 1, search = "") {
+            currentPage = page;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Memuat...</td></tr>`;
+            try {
+                const url = `${apiUrl}?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+                const res = await fetch(url);
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    renderTable(result.data);
+                    renderPagination(result.pagination);
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal terhubung.</td></tr>`;
+            }
+        }
+
+        function renderTable(data) {
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">Tidak ada data.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = data.map(t => `
+                <tr onclick="warnabaris(this)">
+                    <td>${t.tagihan_id}</td>
+                    <td>${t.tagihan_tanggal ? new Date(t.tagihan_tanggal).toLocaleDateString('id-ID') : '-'}</td>
+                    <td>${t.tagihan_nama}</td>
+                    <td style="text-align: center;">${t.tagihan_jumlah}</td>
+                    <td style="text-align: right;">${formatRupiah(t.tagihan_total)}</td>
+                    <td style="text-align: right;">${formatRupiah(t.tagihan_setor)}</td>
+                    <td style="text-align: center;">
+                        <button onclick="editTagihan(${t.tagihan_id})">Detail</button>
+                        <button onclick="deleteTagihan(${t.tagihan_id})">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function clearSelectedRows() {
+            document.querySelectorAll("#tagihanTable tr").forEach(r => {
+                r.classList.remove("selected-row");
+            });
+        }
+
+        function warnabaris(row) {
+            const isSelected = row.classList.contains("selected-row");
+
+            clearSelectedRows();
+
+            if (!isSelected) {
+                row.classList.add("selected-row");
+            }
+        }
+
+        function renderPagination(pagination) {
+            const { page, total_pages, total_rows } = pagination;
+            const paginationControls = document.getElementById('pagination-controls');
+            const pageInfo = document.getElementById('page-info');
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            if (total_pages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${page} dari ${total_pages} (${total_rows} item)`;
+                prevButton.disabled = page <= 1;
+                nextButton.disabled = page >= total_pages;
+
+                prevButton.onclick = () => fetchTagihan(page - 1, searchInput.value);
+                nextButton.onclick = () => fetchTagihan(page + 1, searchInput.value);
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        function editTagihan(id) {
+            window.location.href = `tagihan_baru.html?id=${id}`;
+        }
+
+        async function deleteTagihan(id) {
+            customConfirm("Yakin ingin menghapus tagihan ini?", async () => {
+                try {
+                    const res = await fetch(`${apiUrl}?id=${id}`, { method: "DELETE" });
+                    const result = await res.json();
+                    customAlert(result.message);
+                    fetchTagihan(currentPage, searchInput.value);
+                } catch (error) {
+                    customAlert("Gagal menghapus tagihan.", "error");
+                }
+            });
+        }
+
+        let searchTimeout;
+        searchInput.addEventListener("input", e => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchTagihan(1, e.target.value);
+            }, 300);
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!event.target.closest("#tagihanTable")) {
+                clearSelectedRows();
+            }
+        });
+
+        fetchTagihan(1, "");
+    </script>
+</body>
+</html>

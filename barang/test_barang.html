@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test Point API Barang</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
+        h1, h2 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; }
+        .test-case { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1.5em; margin-bottom: 1.5em; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); }
+        .form-group { margin-bottom: 1em; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"] { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+        button { padding: 10px 18px; background-color: #1e3a8a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background-color: #1e40af; }
+        pre { background-color: #2d2d2d; color: #f0f0f0; padding: 1em; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; margin-top: 1em; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1em; }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Test Point API Barang</h1>
+
+    <!-- GET -->
+    <div class="test-case">
+        <h2>GET /api/barang.php</h2>
+        <button onclick="testGet()">GET All Barang</button>
+        <div class="form-group" style="margin-top: 1em;">
+            <input type="number" id="get_id" placeholder="ID Barang">
+            <button onclick="testGetById()">GET by ID</button>
+        </div>
+        <div class="form-group">
+            <input type="text" id="get_search" placeholder="Cari Nama Barang...">
+            <button onclick="testSearch()">Search</button>
+        </div>
+    </div>
+
+    <!-- POST -->
+    <div class="test-case">
+        <h2>POST /api/barang.php</h2>
+        <form id="formPost" onsubmit="testPost(event)">
+            <div class="grid">
+                <div class="form-group"><label for="post_nama">Nama Barang</label><input type="text" id="post_nama" value="Barang Test" required></div>
+                <div class="form-group"><label for="post_kategori">Kategori ID</label><input type="number" id="post_kategori" value="1" required></div>
+                <div class="form-group"><label for="post_beli">Harga Beli</label><input type="number" id="post_beli" value="10000" required></div>
+                <div class="form-group"><label for="post_diskon_beli">Diskon Beli (%)</label><input type="number" id="post_diskon_beli" value="5"></div>
+                <div class="form-group"><label for="post_jual">Harga Jual</label><input type="number" id="post_jual" value="12000" required></div>
+                <div class="form-group"><label for="post_diskon_jual">Diskon Jual (%)</label><input type="number" id="post_diskon_jual" value="0"></div>
+                <div class="form-group"><label for="post_stok">Stok</label><input type="number" id="post_stok" value="100" required></div>
+                <div class="form-group"><label for="post_satuan">Satuan</label><input type="text" id="post_satuan" value="pcs" required></div>
+            </div>
+            <button type="submit">POST (Create) Barang</button>
+        </form>
+    </div>
+
+    <!-- PUT -->
+    <div class="test-case">
+        <h2>PUT /api/barang.php</h2>
+        <form id="formPut" onsubmit="testPut(event)">
+            <div class="form-group">
+                <label for="put_id">ID Barang untuk di-update</label>
+                <input type="number" id="put_id" placeholder="ID Barang" required>
+            </div>
+            <div class="grid">
+                <div class="form-group"><label for="put_nama">Nama Barang</label><input type="text" id="put_nama" value="Barang Test (Updated)" required></div>
+                <div class="form-group"><label for="put_kategori">Kategori ID</label><input type="number" id="put_kategori" value="1" required></div>
+                <div class="form-group"><label for="put_beli">Harga Beli</label><input type="number" id="put_beli" value="11000" required></div>
+                <div class="form-group"><label for="put_diskon_beli">Diskon Beli (%)</label><input type="number" id="put_diskon_beli" value="10"></div>
+                <div class="form-group"><label for="put_stok">Stok</label><input type="number" id="put_stok" value="90" required></div>
+                <div class="form-group"><label for="put_satuan">Satuan</label><input type="text" id="put_satuan" value="unit" required></div>
+            </div>
+            <button type="submit">PUT (Update) Barang</button>
+        </form>
+    </div>
+
+    <!-- DELETE -->
+    <div class="test-case">
+        <h2>DELETE /api/barang.php</h2>
+        <div class="form-group">
+            <input type="number" id="delete_id" placeholder="ID Barang" required>
+            <button onclick="testDelete()">DELETE Barang</button>
+        </div>
+    </div>
+
+    <!-- Response -->
+    <div>
+        <h2>Response</h2>
+        <pre id="response">Hasil akan ditampilkan di sini...</pre>
+    </div>
+
+    <script>
+        const API_URL = '../api/barang.php';
+        const responseEl = document.getElementById('response');
+
+        async function callApi(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json();
+                responseEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                responseEl.textContent = `Error: ${error.message}\n\nPastikan API berjalan dan tidak ada error syntax. Cek console browser (F12) dan log error PHP.`;
+                console.error('API Call Error:', error);
+            }
+        }
+
+        // --- GET ---
+        function testGet() {
+            callApi(API_URL);
+        }
+
+        function testGetById() {
+            const id = document.getElementById('get_id').value;
+            if (!id) {
+                alert('Masukkan ID barang!');
+                return;
+            }
+            callApi(`${API_URL}?id=${id}`);
+        }
+
+        function testSearch() {
+            const search = document.getElementById('get_search').value;
+            if (!search) {
+                alert('Masukkan kata kunci pencarian!');
+                return;
+            }
+            callApi(`${API_URL}?search=${search}`);
+        }
+
+        // --- POST ---
+        function testPost(event) {
+            event.preventDefault();
+            const data = {
+                nama_barang: document.getElementById('post_nama').value,
+                kategori_id: document.getElementById('post_kategori').value,
+                harga_beli: document.getElementById('post_beli').value,
+                diskon_beli: document.getElementById('post_diskon_beli').value,
+                harga_jual: document.getElementById('post_jual').value,
+                diskon_jual: document.getElementById('post_diskon_jual').value,
+                stok: document.getElementById('post_stok').value,
+                satuan: document.getElementById('post_satuan').value,
+            };
+
+            callApi(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        // --- PUT ---
+        function testPut(event) {
+            event.preventDefault();
+            const id = document.getElementById('put_id').value;
+            if (!id) {
+                alert('Masukkan ID barang yang akan di-update!');
+                return;
+            }
+
+            const data = {
+                nama_barang: document.getElementById('put_nama').value,
+                kategori_id: document.getElementById('put_kategori').value,
+                harga_beli: document.getElementById('put_beli').value,
+                diskon_beli: document.getElementById('put_diskon_beli').value,
+                stok: document.getElementById('put_stok').value,
+                satuan: document.getElementById('put_satuan').value,
+            };
+
+            callApi(`${API_URL}?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        // --- DELETE ---
+        function testDelete() {
+            const id = document.getElementById('delete_id').value;
+            if (!id) {
+                alert('Masukkan ID barang yang akan dihapus!');
+                return;
+            }
+
+            if (confirm(`Yakin ingin menghapus barang dengan ID ${id}?`)) {
+                callApi(`${API_URL}?id=${id}`, {
+                    method: 'DELETE'
+                });
+            }
+        }
+    </script>
+
+</body>
+
+</html>

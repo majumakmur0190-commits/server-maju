@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Export Data Barang</title>
+
+</head>
+
+<body>
+
+    <h3>Filter Data Barang</h3>
+
+    <form id="formFilter">
+        <label>Nama Barang</label><br>
+        <input type="text" id="nama_barang"><br><br>
+
+        <label>Kategori ID</label><br>
+        <input type="number" id="kategori_id"><br><br>
+
+        <label>Barcode</label><br>
+        <input type="number" id="barcode"><br><br>
+
+        <label>Status Aktif</label><br>
+        <select id="aktif">
+            <option value="">Semua</option>
+            <option value="1">Aktif</option>
+            <option value="0">Non Aktif</option>
+        </select><br><br>
+
+        <button type="button" onclick="loadData()">Tampilkan Data</button>
+        <button type="button" onclick="exportXLSX()">Export XLSX</button>
+        <button type="button" onclick="exportSQL()">Export SQL</button>
+    </form>
+
+
+    <hr>
+
+    <h3>Preview Data (API)</h3>
+
+    <table border="1" id="tabel" style="margin-top:10px;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Barcode</th>
+                <th>Nama</th>
+                <th>Harga</th>
+                <th>Stok</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script>
+        let dataBarang = [];
+
+        function loadData() {
+            const params = new URLSearchParams({
+                nama_barang: document.getElementById("nama_barang").value,
+                kategori_id: document.getElementById("kategori_id").value,
+                barcode: document.getElementById("barcode").value,
+                aktif: document.getElementById("aktif").value
+            });
+
+            fetch("get_barang.php?" + params.toString())
+                .then(res => res.json())
+                .then(res => {
+                    dataBarang = res.data;
+                    let tbody = document.querySelector("#tabel tbody");
+                    tbody.innerHTML = "";
+
+                    if (dataBarang.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5">Data kosong</td></tr>`;
+                        return;
+                    }
+
+                    dataBarang.forEach(item => {
+                        tbody.innerHTML += `
+                    <tr>
+                        <td>${item.barang_id}</td>
+                        <td>${item.barcode}</td>
+                        <td>${item.nama_barang}</td>
+                        <td>${item.harga_hna}</td>
+                        <td>${item.stok}</td>
+                    </tr>
+                `;
+                    });
+                });
+        }
+    </script>
+
+    <script>
+        function exportXLSX() {
+            if (dataBarang.length === 0) {
+                alert("Data masih kosong");
+                return;
+            }
+
+            // Susun data untuk Excel
+            const worksheetData = [
+                [
+                    "ID", "Barcode", "Nama Barang", "Kategori",
+                    "Harga HNA", "Stok", "Satuan", "Aktif", "Created At"
+                ]
+            ];
+
+            dataBarang.forEach(item => {
+                worksheetData.push([
+                    item.barang_id,
+                    item.barcode,
+                    item.nama_barang,
+                    item.kategori_id,
+                    item.harga_hna,
+                    item.stok,
+                    item.satuan,
+                    item.aktif,
+                    item.created_at
+                ]);
+            });
+
+            // Buat worksheet & workbook
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Barang");
+
+            // Download file
+            XLSX.writeFile(workbook, "barang_export.xlsx");
+        }
+    </script>
+
+    <script>
+        function escapeSQL(value) {
+            if (value === null || value === undefined) return "";
+            return value.toString().replace(/'/g, "''");
+        }
+    </script>
+
+    <script>
+        function exportSQL() {
+            if (dataBarang.length === 0) {
+                alert("Data masih kosong");
+                return;
+            }
+
+            let sql = "";
+            sql += "-- Export Data Barang\n";
+            sql += "-- Generated at: " + new Date().toISOString() + "\n\n";
+            sql += "START TRANSACTION;\n\n";
+
+            dataBarang.forEach(item => {
+                sql += `INSERT INTO barang 
+                    (barang_id, barcode, nama_barang, kategori_id, harga_hna, stok, satuan, aktif, created_at)
+                    VALUES (
+                    '${escapeSQL(item.barang_id)}',
+                    '${escapeSQL(item.barcode)}',
+                    '${escapeSQL(item.nama_barang)}',
+                    '${escapeSQL(item.kategori_id)}',
+                    '${escapeSQL(item.harga_hna)}',
+                    '${escapeSQL(item.stok)}',
+                    '${escapeSQL(item.satuan)}',
+                    '${escapeSQL(item.aktif)}',
+                    '${escapeSQL(item.created_at)}'
+                    );\n`;
+            });
+
+            sql += "\nCOMMIT;";
+
+            // Download file
+            const blob = new Blob([sql], { type: "text/sql;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "barang_export.sql";
+            link.click();
+        }
+    </script>
+
+
+
+</body>
+
+</html>

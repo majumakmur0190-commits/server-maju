@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Android</title>
+
+    <link href="../css/android.css" rel="stylesheet">
+    <style>
+        /* Transisi untuk pergerakan yang mulus */
+        #login-card {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* Saat keyboard muncul, geser card ke atas */
+        body.keyboard-visible #login-card {
+            transform: translateY(-26%);
+        }
+    </style>
+
+    <!-- ✅ Cek sesi login, jika sudah ada, langsung ke dashboard -->
+    <script>
+        if (localStorage.getItem('maju_user')) {
+            window.location.replace('dashboard.html');
+        }
+    </script>
+
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary to-blue-400 font-sans">
+
+    <!-- Card -->
+    <div id="login-card" class="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-sm border border-white/20">
+        <img src="../gambar/logo.png" alt="gambar logo" class="">
+        <h1 class="text-2xl font-semibold text-center text-gray-800 mb-6">Login</h1>
+
+        <form id="loginForm" class="space-y-4">
+            <!-- Username -->
+            <div>
+                <input type="text" id="username" placeholder="Username"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-primary focus:outline-none"
+                    required />
+            </div>
+
+            <!-- Password -->
+            <div>
+                <input type="password" id="password" placeholder="Password"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-primary focus:outline-none"
+                    required />
+            </div>
+
+            <!-- Tombol -->
+            <button type="submit"
+                class="w-full bg-accent hover:bg-orange-500 text-white font-semibold py-3 rounded-lg transition duration-200 shadow-md">
+                Masuk
+            </button>
+        </form>
+
+    </div>
+
+    <!-- ✅ Custom Alert -->
+    <script src="./js/alert.js"></script>
+    <!-- ✅ Script Login -->
+    <script>
+        // Logika untuk menggeser form saat input aktif
+        const inputs = document.querySelectorAll('#loginForm input');
+        const body = document.body;
+
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                body.classList.add('keyboard-visible');
+            });
+
+            input.addEventListener('blur', () => {
+                body.classList.remove('keyboard-visible');
+            });
+        });
+
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!username || !password) {
+                customAlert("Username dan password wajib diisi!");
+                return;
+            }
+
+            try {
+                const res = await fetch("../api/login.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await res.json();
+
+                if (result.status === "success") {
+                    // Simpan data user ke localStorage
+                    localStorage.setItem('maju_user', JSON.stringify(result.data));
+                    window.location.href = "dashboard.html"; // Arahkan ke dashboard
+                } else {
+                    customAlert(result.message || "Login gagal, periksa kembali data Anda.");
+                }
+            } catch (error) {
+                customAlert("Gagal terhubung ke server. Pastikan XAMPP sedang berjalan.");
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+
+</html>

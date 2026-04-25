@@ -1,0 +1,17 @@
+{
+  "name": "maju",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "aplikasi": "python aplikasi/main.py",
+    "pc": "tailwindcss -i ./input.css -o ./css/pc.css --watch",
+    "android": "tailwindcss -i ./input.css -o ./css/android.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.18"
+  }
+}

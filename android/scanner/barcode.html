@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Manage Barcode Barang</title>
+    <link rel="stylesheet" href="barcode.css">
+    <script src="barcode.js" defer></script>
+</head>
+
+<body>
+    <!-- Global Alert Modal -->
+    <div id="globalAlert" class="alert-overlay">
+        <div class="alert-box">
+            <h3 id="alertTitle">Alert</h3>
+            <p id="alertMessage"></p>
+            <button onclick="closeAlert()">OK</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Cari Barang..." onkeyup="searchBarang()">
+        </div>
+
+        <!-- List of Barang -->
+        <div id="barangList" class="barang-list">
+            <!-- Barang akan ditampilkan di sini -->
+        </div>
+
+        <!-- Modal Edit Barcode -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>Edit Barcode</h2>
+                <label for="editBarcode">Barcode Baru:</label>
+                <input type="text" id="editBarcode" placeholder="Masukkan barcode baru">
+                <button onclick="updateBarcode()">Simpan</button>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,153 @@
+<!-- sidebar.html -->
+<aside
+    class="group bg-primary text-white w-16 hover:w-48 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden shadow-lg h-screen fixed left-0 top-0 z-40">
+
+    <!-- 🔹 Menu Atas -->
+    <div class="flex flex-col h-full">
+        <div
+            class="flex items-center py-5 border-b border-blue-700 justify-center group-hover:justify-start group-hover:px-5 transition-all duration-300">
+            <img src="../gambar/menu.svg" alt="Menu" class="h-5 w-5 shrink-0">
+            <span
+                class="text-base font-semibold opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-3 transition-all duration-300 whitespace-nowrap">MENU</span>
+        </div>
+
+        <nav id="sidebar-menu" class="mt-6 space-y-1 flex-1 overflow-y-auto">
+            <a href="index.html" data-page="index"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/chart.svg" alt="Dashboard" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Dashboard</span>
+            </a>
+            <!-- MENU PENJUALAN DROPDOWN -->
+            <div class="relative">
+                <!-- BUTTON UTAMA -->
+                <button onclick="toggleDropdown('penjualanDropdown', 'penjualanIcon')"
+                    class="flex items-center gap-3 px-4 py-3 w-full hover:bg-blue-700 rounded-md transition focus:outline-none">
+
+                    <img src="../gambar/cart.svg" alt="Penjualan" class="h-5 w-5">
+
+                    <span
+                        class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        Penjualan
+                    </span>
+
+                    <!-- ICON PANAH -->
+                    <svg class="ml-auto w-4 h-4 transition-transform" id="penjualanIcon"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <!-- SUBMENU -->
+                <div id="penjualanDropdown" class="hidden ml-10 mt-1 space-y-1">
+
+                    <a href="penjualan.html" data-page="penjualan"
+                        class="flex items-center gap-3 px-4 py-2 text-sm hover:bg-blue-700 rounded-md transition">
+                        <img src="../gambar/cart.svg" alt="Penjualan" class="h-5 w-5">Riwayat Penjualan
+                    </a>
+
+                    <a href="transaksi.html" data-page="transaksi"
+                        class="flex items-center gap-3 px-4 py-2 text-sm hover:bg-blue-700 rounded-md transition">
+                        <img src="../gambar/add.svg" alt="Penjualan" class="h-5 w-5">Penjualan Baru
+                    </a>
+                </div>
+            </div>
+
+
+            <!-- MENU PEMBELIAN DROPDOWN -->
+            <div class="relative">
+                <!-- BUTTON UTAMA -->
+                <button onclick="toggleDropdown('pembelianDropdown', 'pembelianIcon')"
+                    class="flex items-center gap-3 px-4 py-3 w-full hover:bg-blue-700 rounded-md transition focus:outline-none">
+
+                    <img src="../gambar/buy.svg" alt="Pembelian" class="h-5 w-5">
+
+                    <span
+                        class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                        Pembelian
+                    </span>
+
+                    <!-- ICON PANAH -->
+                    <svg class="ml-auto w-4 h-4 transition-transform" id="pembelianIcon"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <!-- SUBMENU -->
+                <div id="pembelianDropdown" class="hidden ml-10 mt-1 space-y-1">
+                    <a href="pembelian.html" data-page="pembelian"
+                        class="flex items-center gap-3 px-4 py-2 text-sm hover:bg-blue-700 rounded-md transition">
+                        <img src="../gambar/buy.svg" alt="Riwayat Pembelian" class="h-5 w-5">Riwayat Pembelian
+                    </a>
+
+                    <a href="pembelian_baru.html" data-page="pembelian_baru"
+                        class="flex items-center gap-3 px-4 py-2 text-sm hover:bg-blue-700 rounded-md transition">
+                        <img src="../gambar/add_buy.svg" alt="Pembelian Baru" class="h-5 w-5">Pembelian Baru
+                    </a>
+                </div>
+            </div>
+            <!-- ✅ Link untuk Pelanggan -->
+
+            <a href="pelanggan.html" data-page="pelanggan"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/pelanggan.svg" alt="Pelanggan" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Pelanggan</span>
+            </a>
+
+            <a href="suplier.html" data-page="suplier"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/suplier.svg" alt="Suplier" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Suplier</span>
+            </a>
+
+            <a href="tagihan.html" data-page="tagihan"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/tagihan1.svg" alt="Tagihan" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Tagihan</span>
+            </a>
+
+            <a href="kategori.html" data-page="kategori"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/kategori.svg" alt="Barang" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Kategori</span>
+            </a>
+
+            <a href="barang.html" data-page="barang"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/produk.svg" alt="Barang" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Barang</span>
+            </a>
+
+            <a href="users.html" data-page="users"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/user.svg" alt="Users" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Manajemen
+                    User</span>
+            </a>
+
+            <a href="laporan.html" data-page="laporan"
+                class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition">
+                <img src="../gambar/sales.svg" alt="Laporan" class="h-5 w-5">
+                <span
+                    class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Laporan</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- 🔹 Logout -->
+    <div class="border-t border-blue-700 py-3">
+        <a href="#" id="logoutButton"
+            class="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-md transition cursor-pointer">
+            <img src="../gambar/logout.svg" alt="Logout" class="h-5 w-5">
+            <span
+                class="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">Logout</span>
+        </a>
+    </div>
+</aside>

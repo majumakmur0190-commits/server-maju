@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirect...</title>
+    <script>
+        (function () {
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (/android|iphone|ipad|ipod|mobile/i.test(userAgent)) {
+                // Jika perangkat Android / Mobile
+                window.location.replace("./android/login.html");
+            } else {
+                // Jika perangkat PC / Desktop
+                window.location.replace("./pc/login.html");
+            }
+        })();
+
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>

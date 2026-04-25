@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cetak Invoice - PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+            background: #f7f7f7;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        button {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>🧾 Cetak Invoice Pelanggan</h2>
+    <p>Klik tombol di bawah untuk membuat dan mencetak invoice.</p>
+
+    <button id="cetak-btn">Cetak Invoice</button>
+
+    <script>
+        document.getElementById('cetak-btn').addEventListener('click', () => {
+            // Buka halaman pembuat PDF di tab baru
+            window.open('print.php', '_blank');
+        });
+    </script>
+</body>
+
+</html>

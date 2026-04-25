@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Aplikasi Penjualan</title>
+
+    <!-- Menggunakan 7.css dari node_modules -->
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body {
+            background-color: #386ea9;
+            /* Warna background khas login screen Windows 7 */
+            background: radial-gradient(circle at center, #5ea0d6 0%, #386ea9 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .login-container {
+            width: 360px;
+            z-index: 10;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        /* Modal Overlay untuk Setting & Alert */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .error-text {
+            color: #d32f2f;
+            font-size: 11px;
+            margin-top: 2px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Window Login -->
+    <div class="window login-container active">
+        <div class="title-bar">
+            <div class="title-bar-text">Login Aplikasi Penjualan</div>
+            <div class="title-bar-controls">
+                <button aria-label="Close" onclick="window.close()"></button>
+            </div>
+        </div>
+        <div class="window-body">
+            <div class="logo-container">
+                <img src="../gambar/logo.png" alt="Logo" class="logo-img">
+                <h4 style="margin: 10px 0 5px 0;">Selamat Datang</h4>
+                <p style="margin: 0; font-size: 12px; color: #666;">Silakan login untuk melanjutkan</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="field-row-stacked" style="width: 100%">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" style="width: 100%" placeholder="Contoh: admin" autofocus>
+                    <p id="usernameError" class="error-text"></p>
+                </div>
+
+                <div class="field-row-stacked" style="width: 100%; margin-top: 10px;">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" style="width: 100%">
+                    <p id="passwordError" class="error-text"></p>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <button type="button" onclick="openSetting()">Pengaturan IP</button>
+                    <button type="submit" id="loginBtn" class="default" style="min-width: 80px;">Masuk</button>
+                </div>
+            </form>
+        </div>
+        <div class="status-bar">
+            <p class="status-bar-field">Status: Menunggu Input</p>
+            <p class="status-bar-field" id="currentIpDisplay">Server: localhost</p>
+        </div>
+    </div>
+
+    <!-- Modal Pengaturan IP -->
+    <div id="settingModal" class="modal-overlay">
+        <div class="window" style="width: 300px;">
+            <div class="title-bar">
+                <div class="title-bar-text">Pengaturan Server</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Close" onclick="closeSetting()"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <p>Masukkan IP Address Server API:</p>
+                <div class="field-row-stacked">
+                    <label for="serverIpInput">IP Address / Domain</label>
+                    <input type="text" id="serverIpInput" placeholder="localhost atau 192.168.1.x" style="width: 100%">
+                </div>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button onclick="closeSetting()">Batal</button>
+                    <button onclick="saveSetting()" class="default">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alert Sederhana -->
+    <div id="alertModal" class="modal-overlay">
+        <div class="window" style="width: 300px;">
+            <div class="title-bar">
+                <div class="title-bar-text" id="alertTitle">Pemberitahuan</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Close" onclick="closeAlert()"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <!-- Icon Info sederhana dengan CSS -->
+                    <div style="font-size: 32px; color: #0066cc;">&#9432;</div>
+                    <p id="alertMessage" style="margin: 0;">Pesan alert.</p>
+                </div>
+                <div style="text-align: center;">
+                    <button onclick="closeAlert()" class="default" style="min-width: 80px;">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIKA SERVER IP ---
+        let serverIp = 'localhost';
+
+        // Fungsi inisialisasi konfigurasi (Async karena memanggil sistem file)
+        async function initConfig() {
+            try {
+                // 1. Coba muat dari File JSON (via Electron API)
+                const config = await window.electronAPI.loadConfig();
+
+                // ✅ Fitur Auto-Login: Jika ada userData, langsung masuk ke Dashboard
+                if (config && config.userData && config.userData.id) {
+                    sessionStorage.setItem('loggedInUser', JSON.stringify(config.userData));
+                    window.location.href = 'index.html';
+                    return; // Hentikan eksekusi script selanjutnya
+                }
+                
+                if (config && config.serverIp) {
+                    // Sinkronkan file JSON ke localStorage
+                    localStorage.setItem('server_ip', config.serverIp);
+                }
+
+                serverIp = localStorage.getItem('server_ip') || 'localhost';
+                document.getElementById('currentIpDisplay').textContent = `Server: ${serverIp}`;
+
+                // Pastikan focus dipanggil setelah inisialisasi selesai
+                document.getElementById('username').focus();
+            } catch (err) {
+                console.error("Gagal inisialisasi config:", err);
+            }
+        }
+
+        initConfig();
+
+        // Fungsi untuk mendapatkan URL API lengkap
+        function getApiUrl(endpoint) {
+            // Asumsi struktur folder di server adalah /maju/electron/api/
+            // Sesuaikan path ini jika struktur di htdocs berbeda
+            return `http://${serverIp}:1987/maju/api/${endpoint}`;
+        }
+
+        // --- LOGIKA LOGIN ---
+        (function () {
+            if (sessionStorage.getItem('loggedInUser')) {
+                window.location.href = 'index.html';
+            }
+        })();
+
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const usernameError = document.getElementById("usernameError");
+        const passwordError = document.getElementById("passwordError");
+        const loginForm = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
+
+        function showError(el, msg) {
+            el.textContent = msg;
+            el.style.display = "block";
+        }
+
+        function clearError(el) {
+            el.textContent = "";
+            el.style.display = "none";
+        }
+
+        // Validasi client-side sebelum submit
+        function validateForm() {
+            let valid = true;
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            // Username: wajib, minimal 3 karakter
+            if (!username) {
+                showError(usernameError, "Username wajib diisi.");
+                valid = false;
+            } else if (username.length < 3) {
+                showError(usernameError, "Username minimal 3 karakter.");
+                valid = false;
+            } else {
+                clearError(usernameError);
+            }
+
+            // Password: wajib, minimal 6 karakter
+            if (!password) {
+                showError(passwordError, "Password wajib diisi.");
+                valid = false;
+            } else if (password.length < 6) {
+                showError(passwordError, "Password minimal 6 karakter.");
+                valid = false;
+            } else {
+                clearError(passwordError);
+            }
+
+            // Nonaktifkan tombol saat invalid (opsional visual)
+            loginBtn.disabled = !valid;
+            if (loginBtn.disabled) {
+                // 7.css handles disabled state automatically
+            } else {
+                
+            }
+
+            return valid;
+        }
+
+        // Validasi saat mengetik
+        usernameInput.addEventListener("input", validateForm);
+        passwordInput.addEventListener("input", validateForm);
+
+        // Submit handler (tetap menggunakan validasi)
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            try {
+                // Menggunakan URL dinamis berdasarkan IP setting
+                const res = await fetch(getApiUrl("login.php"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await res.json();
+
+                if (result.status === "success") {
+                    // ✅ Simpan data pengguna ke sessionStorage
+                    // Pastikan API login Anda mengembalikan data user dalam properti 'data'
+                    sessionStorage.setItem('loggedInUser', JSON.stringify(result.data));
+
+                    // ✅ Simpan data user ke config.json (Permanen)
+                    try {
+                        const currentConfig = await window.electronAPI.loadConfig();
+                        const updatedConfig = {
+                            ...currentConfig,
+                            userData: {
+                                id: result.data.id,
+                                username: result.data.username,
+                                role: result.data.role
+                            }
+                        };
+                        await window.electronAPI.saveConfig(updatedConfig);
+                    } catch (configErr) {
+                        console.error("Gagal menyimpan data user ke config.json:", configErr);
+                    }
+
+                    // Arahkan ke halaman utama setelah data disimpan
+                    window.location.href = "index.html";
+                } else {
+                    customAlert(result.message || "Login gagal, periksa kembali data Anda.");
+                }
+            } catch (error) {
+                customAlert(`Gagal terhubung ke server (${serverIp}).\nPastikan IP benar dan XAMPP berjalan.`);
+                console.error(error);
+            }
+        });
+
+        // --- LOGIKA MODAL SETTING ---
+        const settingModal = document.getElementById('settingModal');
+        const serverIpInput = document.getElementById('serverIpInput');
+
+        function openSetting() {
+            serverIpInput.value = serverIp;
+            settingModal.style.display = 'flex';
+        }
+
+        function closeSetting() {
+            settingModal.style.display = 'none';
+        }
+
+        async function saveSetting() {
+            const newIp = serverIpInput.value.trim();
+            if (newIp) {
+                serverIp = newIp;
+                // Simpan ke localStorage
+                localStorage.setItem('server_ip', newIp);
+                // Simpan ke File JSON melalui Main Process
+                await window.electronAPI.saveConfig({ serverIp: newIp });
+                
+                document.getElementById('currentIpDisplay').textContent = `Server: ${serverIp}`;
+                closeSetting();
+                customAlert("IP Server berhasil disimpan.");
+            } else {
+                customAlert("IP tidak boleh kosong.");
+            }
+        }
+
+        // --- LOGIKA CUSTOM ALERT ---
+        const alertModal = document.getElementById('alertModal');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertTitle = document.getElementById('alertTitle');
+        let alertCallback = null;
+
+        window.customAlert = function(message, title = "Pemberitahuan", onClose) {
+            alertMessage.innerText = message; // Gunakan innerText agar \n terbaca sebagai baris baru jika CSS mendukung (atau ganti ke innerHTML dan <br>)
+            alertTitle.textContent = title;
+            alertCallback = onClose;
+            alertModal.style.display = 'flex';
+        }
+
+        function closeAlert() {
+            alertModal.style.display = 'none';
+            if (alertCallback) {
+                alertCallback();
+                alertCallback = null;
+            }
+        }
+    </script>
+</body>
+
+</html>

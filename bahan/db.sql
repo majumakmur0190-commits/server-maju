@@ -1,0 +1,67 @@
+DROP DATABASE IF EXISTS maju;
+CREATE DATABASE IF NOT EXISTS maju CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE maju;
+
+CREATE TABLE users (
+  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  nama VARCHAR(100) NOT NULL,
+  role ENUM('admin','kasir','sales') NOT NULL DEFAULT 'kasir',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+
+CREATE TABLE pelanggan (
+  pelanggan_id INT AUTO_INCREMENT PRIMARY KEY,
+  nama_pelanggan VARCHAR(100) NOT NULL,
+  alamat TEXT,
+  no_telepon VARCHAR(20),
+  aktif TINYINT(1) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE kategori (
+  kategori_id INT AUTO_INCREMENT PRIMARY KEY,
+  nama_kategori VARCHAR(100) NOT NULL UNIQUE,
+  deskripsi TEXT,
+  aktif TINYINT(1) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE barang (
+  barang_id INT AUTO_INCREMENT PRIMARY KEY,
+  nama_barang VARCHAR(100) NOT NULL,
+  kategori_id INT NOT NULL,
+  harga_beli DECIMAL(15,2) NOT NULL DEFAULT 0,
+  diskon_beli DECIMAL(5,2) NOT NULL DEFAULT 0,
+  harga_jual DECIMAL(15,2) NOT NULL DEFAULT 0,
+  diskon_jual DECIMAL(5,2) NOT NULL DEFAULT 0,
+  stok INT DEFAULT 0,
+  satuan VARCHAR(20) DEFAULT "pcs",
+  aktif TINYINT(1) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+
+CREATE TABLE penjualan (
+  penjualan_id INT AUTO_INCREMENT PRIMARY KEY,
+  tanggal DATETIME DEFAULT CURRENT_TIMESTAMP,
+  user_id INT NOT NULL,
+  pelanggan_id INT NULL,
+  subtotal DECIMAL(15,2) NOT NULL DEFAULT 0,
+  diskon DECIMAL(15,2) NOT NULL DEFAULT 0,
+  ppn INT NOT NULL DEFAULT 11,
+  total DECIMAL(15,2) NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
+
+CREATE TABLE detail_penjualan (
+  detail_id INT AUTO_INCREMENT PRIMARY KEY,
+  penjualan_id INT NOT NULL,
+  barang_id INT NOT NULL,
+  jumlah INT NOT NULL DEFAULT 1,
+  harga_satuan DECIMAL(15,2) NOT NULL,
+  diskon DECIMAL(5,2) NOT NULL DEFAULT 0,
+  subtotal DECIMAL(15,2) GENERATED ALWAYS AS ((jumlah * harga_satuan) * (1 - diskon / 100)) STORED
+) ENGINE=InnoDB;

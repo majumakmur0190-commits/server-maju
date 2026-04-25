@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Data Pelanggan</title>
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+        .selected-row { background-color: #7078ee !important; }
+        #sidebar-container { width: 100%; flex-shrink: 0; }
+        main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+    </style>
+</head>
+
+<body>
+    <!-- Topbar / Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Konten utama -->
+    <main>
+        <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+            <div class="title-bar">
+                <div class="title-bar-text">Data Pelanggan</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                    <button aria-label="Maximize"></button>
+                    <button aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="window-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- 🔍 Form Pencarian -->
+                <div style="display: flex; justify-content: space-between; padding: 10px; padding-bottom: 0; margin-bottom: 10px;">
+                    <input id="searchInput" type="text" placeholder="Cari pelanggan..." style="width: 300px;" />
+                    <button onclick="openForm()">+ Tambah Pelanggan</button>
+                </div>
+
+        <!-- 📋 Tabel Pelanggan -->
+                <div style="flex: 1; overflow: auto; border: 1px solid #8e8f8f; background: white;">
+                    <table style="width: 100%;">
+                        <thead>
+                    <tr onclick="warnabaris(this)">
+                                <th>ID</th>
+                                <th>Nama Pelanggan</th>
+                                <th>Alamat</th>
+                                <th>No. Telepon</th>
+                                <th style="text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="pelangganTable"></tbody>
+            </table>
+                </div>
+            <!-- Pagination Controls -->
+                <div id="pagination-controls" style="padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <button id="prev-page">Sebelumnya</button>
+                    <span id="page-info"></span>
+                    <button id="next-page">Berikutnya</button>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <!-- 🧾 Modal Form -->
+    <div id="formModal" class="modal-overlay">
+        <div class="window" style="width: 400px;">
+            <div class="title-bar">
+                <div class="title-bar-text" id="formTitle">Tambah Pelanggan</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Close" onclick="closeForm()"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <form id="pelangganForm">
+                <input type="hidden" id="pelanggan_id" />
+                    <div class="field-row-stacked">
+                        <label for="nama_pelanggan">Nama Pelanggan</label>
+                        <input id="nama_pelanggan" type="text" style="width: 100%;" required />
+                </div>
+                    <div class="field-row-stacked">
+                        <label for="alamat">Alamat</label>
+                        <textarea id="alamat" rows="3" style="width: 100%;"></textarea>
+                </div>
+                    <div class="field-row-stacked">
+                        <label for="no_telepon">No. Telepon</label>
+                        <input id="no_telepon" type="text" style="width: 100%;" />
+                </div>
+                    <div style="margin-top: 15px; text-align: right;">
+                        <button type="button" onclick="closeForm()">Batal</button>
+                        <button type="submit" class="default">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp(); // Panggil fungsi dari main.js
+
+        const SERVER_IP = localStorage.getItem('server_ip') || 'localhost';
+        const apiUrl = `http://${SERVER_IP}:1987/maju/api/pelanggan.php`;
+        const tableBody = document.getElementById("pelangganTable"); // Ubah ID tabel
+        const formModal = document.getElementById("formModal");
+        const form = document.getElementById("pelangganForm"); // Ubah ID form
+
+        // Variabel untuk data dan paginasi
+        let allPelanggan = [];
+        let filteredPelanggan = [];
+        let currentPage = 1;
+        const itemsPerPage = parseInt(localStorage.getItem('pagination_limit')) || 10;
+
+        // Elemen paginasi
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+
+        // 🔹 Ambil semua data pelanggan sekali saja
+        async function fetchAllPelanggan() {
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Memuat...</td></tr>`;
+            try {
+                const res = await fetch(apiUrl);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    allPelanggan = result.data;
+                    filterAndDisplayPelanggan();
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Gagal memuat data.</td></tr>`;
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Gagal terhubung ke server.</td></tr>`;
+            }
+        }
+
+        // 🔹 Filter dan tampilkan data berdasarkan halaman
+        function filterAndDisplayPelanggan(keyword = "", page = 1) {
+            currentPage = page;
+            const lowerKeyword = keyword.toLowerCase();
+
+            filteredPelanggan = allPelanggan.filter(p =>
+                p.nama_pelanggan.toLowerCase().includes(lowerKeyword) ||
+                (p.alamat && p.alamat.toLowerCase().includes(lowerKeyword)) ||
+                (p.no_telepon && p.no_telepon.includes(lowerKeyword))
+            );
+
+            const totalItems = filteredPelanggan.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedItems = filteredPelanggan.slice(startIndex, endIndex);
+
+            renderTable(paginatedItems, startIndex);
+            renderPagination(totalItems, totalPages);
+        }
+
+        // 🔹 Render tabel
+        function renderTable(data, startIndex) {
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Tidak ada data ditemukan.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = data.map((p, index) => {
+                const row = `
+                    <tr>
+                        <td>${p.pelanggan_id}</td>
+                        <td>${p.nama_pelanggan}</td>
+                        <td>${p.alamat || '-'}</td>
+                        <td>${p.no_telepon || '-'}</td>
+                        <td style="text-align: center;">
+                            <button onclick='editPelanggan(${JSON.stringify(p)})'>Edit</button>
+                            <button onclick='deletePelanggan(${p.pelanggan_id})'>Hapus</button>
+                        </td>
+                    </tr>`;
+                return row;
+            }).join('');
+        }
+
+        // 🔹 Render kontrol paginasi
+        function renderPagination(totalItems, totalPages) {
+            if (totalPages > 1) {
+                paginationControls.style.display = 'flex';
+                pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages} (${totalItems} item)`;
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        // 🔹 Pencarian realtime
+        document.getElementById("searchInput").addEventListener("input", e => {
+            filterAndDisplayPelanggan(e.target.value, 1);
+        });
+
+        // 🔹 Buka & Tutup Form
+        function clearSelectedRows() {
+            document.querySelectorAll("#pelangganTable tr").forEach(r => {
+                r.classList.remove("selected-row");
+            });
+        }
+
+        function warnabaris(row) {
+            const isSelected = row.classList.contains("selected-row");
+
+            clearSelectedRows();
+
+            if (!isSelected) {
+                row.classList.add("selected-row");
+            }
+        }
+
+        function openForm() {
+            form.reset();
+            document.getElementById("pelanggan_id").value = ""; // Ubah ID
+            document.getElementById("formTitle").textContent = "Tambah Pelanggan"; // Ubah judul
+            formModal.style.display = "flex";
+        }
+
+        function closeForm() {
+            formModal.style.display = "none";
+        }
+
+        // 🔹 Edit Pelanggan
+        function editPelanggan(p) { // Ubah nama fungsi dan variabel
+            openForm();
+            document.getElementById("formTitle").textContent = "Edit Pelanggan"; // Ubah judul
+            document.getElementById("pelanggan_id").value = p.pelanggan_id; // Ubah ID
+            document.getElementById("nama_pelanggan").value = p.nama_pelanggan; // Ubah ID
+            document.getElementById("alamat").value = p.alamat; // Ubah ID
+            document.getElementById("no_telepon").value = p.no_telepon; // Tambah field
+        }
+
+
+        // 🔹 Simpan Data
+        form.addEventListener("submit", async e => {
+            e.preventDefault();
+            const submitButton = form.querySelector('button[type="submit"]');
+            const id = document.getElementById("pelanggan_id").value; // Ubah ID
+            const nama = document.getElementById("nama_pelanggan").value; // Ubah ID
+            const alamat = document.getElementById("alamat").value; // Ubah ID
+            const no_telepon = document.getElementById("no_telepon").value; // Tambah field
+
+            const dataToSend = {
+                nama_pelanggan: nama,
+                alamat: alamat,
+                no_telepon: no_telepon
+            };
+
+            let url = apiUrl;
+            let method = "POST";
+
+            if (id) {
+                dataToSend.pelanggan_id = id; // Ubah ID
+                url = `${apiUrl}?id=${id}`; // Append ID to URL for PUT/DELETE
+                method = "PUT";
+            }
+
+            // Tampilkan loading
+            submitButton.disabled = true;
+            submitButton.textContent = 'Menyimpan...';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dataToSend)
+            });
+            const result = await res.json();
+
+            // Kembalikan tombol ke normal
+            submitButton.disabled = false;
+            submitButton.textContent = 'Simpan';
+
+            customAlert(result.message || "Data tersimpan!");
+            closeForm(); // Tutup modal
+            fetchAllPelanggan(); // Muat ulang semua data
+        });
+
+        // 🔹 Hapus Data
+        async function deletePelanggan(id) { // Ubah nama fungsi
+            customConfirm("Yakin ingin menghapus data ini?", async () => {
+                const res = await fetch(`${apiUrl}?id=${id}`, { method: "DELETE" });
+                const result = await res.json();
+                customAlert(result.message || "Data dihapus!");
+                fetchAllPelanggan(); // Muat ulang semua data
+            });
+        }
+
+        // 🔹 Event Listener untuk tombol paginasi
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) filterAndDisplayPelanggan(document.getElementById("searchInput").value, currentPage - 1);
+        });
+        nextButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredPelanggan.length / itemsPerPage);
+            if (currentPage < totalPages) filterAndDisplayPelanggan(document.getElementById("searchInput").value, currentPage + 1);
+        });
+
+
+        // 🔹 Load data awal
+        document.addEventListener("click", (event) => {
+            if (!event.target.closest("#pelangganTable")) {
+                clearSelectedRows();
+            }
+        });
+
+        fetchAllPelanggan();
+    </script>
+</body>
+
+</html>

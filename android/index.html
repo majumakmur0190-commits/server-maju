@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Barang dengan Modal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- Pencarian fixed di atas -->
+    <div class="fixed top-0 left-0 w-full bg-white shadow p-4 z-50">
+        <input type="text" id="searchInput" placeholder="Cari barang..." class="w-full border p-2 rounded">
+    </div>
+
+    <!-- Konten list barang -->
+    <div class="pt-20 max-w-lg mx-auto p-4">
+
+        <!-- Tambahkan tombol floating -->
+        <button id="openModal"
+            class="fixed bottom-6 right-6 bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl shadow-lg z-50 hover:bg-blue-600 transition">
+            +
+        </button>
+
+
+        <div id="barangList" class="space-y-2"></div>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modalForm" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded shadow w-full max-w-md relative">
+            <h2 class="text-xl font-bold mb-4" id="modalTitle">Tambah Barang</h2>
+            <form id="barangForm" class="space-y-2">
+                <input type="hidden" id="barang_id">
+                <div>
+                    <label class="block text-sm font-medium">Nama Barang</label>
+                    <input type="text" id="nama_barang" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Kategori ID</label>
+                    <input type="number" id="kategori_id" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Harga HNA</label>
+                    <input type="number" id="harga_hna" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Stok</label>
+                    <input type="number" id="stok" class="w-full border p-2 rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Satuan</label>
+                    <input type="text" id="satuan" class="w-full border p-2 rounded">
+                </div>
+                <div class="flex justify-end space-x-2 mt-2">
+                    <button type="button" id="closeModal" class="bg-gray-300 px-4 py-2 rounded">Batal</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '../api/barang.php';
+        const barangList = document.getElementById('barangList');
+        const searchInput = document.getElementById('searchInput');
+        const modalForm = document.getElementById('modalForm');
+        const openModalBtn = document.getElementById('openModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const barangForm = document.getElementById('barangForm');
+
+        // ======== Fetch Barang ========
+        async function fetchBarang(search = '') {
+            let url = API_URL;
+            if (search) url += '?search=' + encodeURIComponent(search);
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    renderBarangList(data.data);
+                } else {
+                    barangList.innerHTML = `<p class="text-red-500">Gagal mengambil data</p>`;
+                }
+            } catch (err) {
+                barangList.innerHTML = `<p class="text-red-500">Error koneksi API</p>`;
+            }
+        }
+
+        // ======== Render List Barang ========
+        function renderBarangList(barangs) {
+            if (!barangs || barangs.length === 0) {
+                barangList.innerHTML = `<p class="text-gray-500">Tidak ada data</p>`;
+                return;
+            }
+
+            barangList.innerHTML = barangs.map(b => `
+        <div class="p-2 border rounded flex justify-between items-center bg-gray-50">
+            <div>
+                <p class="font-medium">${b.nama_kategori} - ${b.nama_barang}</p>
+                <p class="text-sm text-gray-600">Harga: ${b.harga_hna}, Stok: ${b.stok}, Satuan: ${b.satuan}</p>
+            </div>
+            <div class="flex space-x-1">
+                <button onclick="editBarang(${b.barang_id})" class="bg-yellow-400 px-2 py-1 rounded text-white text-sm">Edit</button>
+                <button onclick="deleteBarang(${b.barang_id})" class="bg-red-500 px-2 py-1 rounded text-white text-sm">Hapus</button>
+            </div>
+        </div>
+    `).join('');
+        }
+
+        // ======== Open / Close Modal ========
+        openModalBtn.addEventListener('click', () => {
+            modalTitle.textContent = 'Tambah Barang';
+            resetForm();
+            modalForm.classList.remove('hidden');
+            modalForm.classList.add('flex');
+        });
+        closeModalBtn.addEventListener('click', () => {
+            modalForm.classList.add('hidden');
+        });
+
+        // ======== Tambah / Update Barang ========
+        barangForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = document.getElementById('barang_id').value;
+            const payload = {
+                nama_barang: document.getElementById('nama_barang').value,
+                kategori_id: document.getElementById('kategori_id').value,
+                harga_hna: document.getElementById('harga_hna').value,
+                stok: document.getElementById('stok').value,
+                satuan: document.getElementById('satuan').value
+            };
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}?id=${id}` : API_URL;
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.status === 'success') {
+                    fetchBarang();
+                    modalForm.classList.add('hidden');
+                }
+            } catch (err) {
+                alert('Gagal terhubung ke API');
+            }
+        });
+
+        // ======== Reset Form ========
+        function resetForm() {
+            barangForm.reset();
+            document.getElementById('barang_id').value = '';
+        }
+
+        // ======== Edit Barang ========
+        async function editBarang(id) {
+            try {
+                const res = await fetch(`${API_URL}?id=${id}`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const b = data.data;
+                    modalTitle.textContent = 'Edit Barang';
+                    document.getElementById('barang_id').value = b.barang_id;
+                    document.getElementById('nama_barang').value = b.nama_barang;
+                    document.getElementById('kategori_id').value = b.kategori_id;
+                    document.getElementById('harga_hna').value = b.harga_hna;
+                    document.getElementById('stok').value = b.stok;
+                    document.getElementById('satuan').value = b.satuan;
+                    modalForm.classList.remove('hidden');
+                    modalForm.classList.add('flex');
+                } else {
+                    alert('Barang tidak ditemukan');
+                }
+            } catch (err) {
+                alert('Gagal ambil data barang');
+            }
+        }
+
+        // ======== Hapus Barang ========
+        async function deleteBarang(id) {
+            if (!confirm('Apakah yakin ingin menghapus barang ini?')) return;
+            try {
+                const res = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                alert(data.message);
+                if (data.status === 'success') fetchBarang();
+            } catch (err) {
+                alert('Gagal menghapus barang');
+            }
+        }
+
+        // ======== Pencarian ========
+        searchInput.addEventListener('input', () => {
+            fetchBarang(searchInput.value);
+        });
+
+        // Load awal
+        fetchBarang();
+    </script>
+
+</body>
+
+</html>

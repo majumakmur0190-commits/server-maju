@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan</title>
+    <link href="../css/pc.css" rel="stylesheet">
+</head>
+ 
+<body class="bg-gray-100 font-sans h-screen overflow-hidden">
+    <div id="sidebar-container"></div>
+
+    <!-- 🔹 Konten utama bergeser ke kanan -->
+    <main class="ml-16 group-hover:ml-56 transition-all duration-300 p-4 h-full flex flex-col">
+        <div class="flex-grow overflow-y-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-md">
+                    <h2 class="text-gray-600 text-sm">Total Penjualan</h2>
+                    <p class="text-3xl font-bold text-primary mt-2">Rp 24.500.000</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md">
+                    <h2 class="text-gray-600 text-sm">Barang Terjual</h2>
+                    <p class="text-3xl font-bold text-primary mt-2">325</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md">
+                    <h2 class="text-gray-600 text-sm">User Aktif</h2>
+                    <p class="text-3xl font-bold text-primary mt-2">12</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp(); // Panggil fungsi dari main.js
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manajemen Barcode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+        }
+
+        .nav button {
+            width: 48%;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        input,
+        button {
+            width: 90%;
+            padding: 12px;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .card h3 {
+            margin: 0 0 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Manajemen Barcode</h2>
+
+    <div class="nav">
+        <button onclick="showPage('search')">Cari Barcode</button>
+        <button onclick="showPage('edit')">Edit Barcode</button>
+    </div>
+
+    <!-- HALAMAN CARI -->
+    <div id="page-search">
+        <input type="text" id="barcode" placeholder="Masukkan barcode">
+        <button onclick="searchBarcode()">Cari</button>
+        <div id="result"></div>
+    </div>
+
+    <!-- HALAMAN EDIT -->
+    <div id="page-edit" style="display:none;">
+        <input type="text" id="edit_barcode" readonly placeholder="Barcode">
+        <input type="text" id="edit_nama" placeholder="Nama Barang">
+        <input type="number" id="edit_harga" placeholder="Harga">
+        <button onclick="updateBarcode()">Simpan Perubahan</button>
+        <div id="edit_result"></div>
+    </div>
+
+    <script>
+        function showPage(page) {
+            document.getElementById('page-search').style.display = (page === 'search') ? 'block' : 'none';
+            document.getElementById('page-edit').style.display = (page === 'edit') ? 'block' : 'none';
+        }
+
+        function searchBarcode() {
+            var api = 'http://192.168.1.250:1987/maju/api/barcode.php?action=search-barcode';
+            var barcode = document.getElementById('barcode').value;
+            var result = document.getElementById('result');
+
+            result.innerHTML = '';
+
+            if (barcode === '') {
+                alert('Masukkan barcode!');
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', api, true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var data = JSON.parse(xhr.responseText);
+                        var html = '';
+
+                        for (var i = 0; i < data.length; i++) {
+                            console.log(data[i]);
+                            var item = data[i];
+
+                            html += '<div class="card">';
+                            html += '<h3>' + item.nama_barang + '</h3>';
+                            html += '<p><strong>Barcode:</strong> ' + item.barcode + '</p>';
+                            html += '<p><strong>Harga:</strong> ' + item.harga_hna + '</p>';
+                            html += '<button onclick="openEdit(\'' + item.barcode + '\', \'' + item.nama_barang + '\', \'' + item.harga + '\')">Edit</button>';
+                            html += '</div>';
+                        }
+
+                        result.innerHTML = html;
+                    } else {
+                        result.innerHTML = '<p style="color:red;">Data tidak ditemukan</p>';
+                    }
+                }
+            };
+
+            xhr.send('barcode=' + encodeURIComponent(barcode));
+        }
+
+        function openEdit(barcode, nama, harga) {
+            showPage('edit');
+            document.getElementById('edit_barcode').value = barcode;
+            document.getElementById('edit_nama').value = nama;
+            document.getElementById('edit_harga').value = harga;
+        }
+
+        function updateBarcode() {
+            var api = 'http://192.168.1.250:1987/maju/api/barcode.php?action=update-barcode';
+
+            var barcode = document.getElementById('edit_barcode').value;
+            var nama = document.getElementById('edit_nama').value;
+            var harga = document.getElementById('edit_harga').value;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', api, true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('edit_result').innerHTML =
+                        '<p style="color:green;">Data berhasil diperbarui</p>';
+                }
+            };
+
+            xhr.send(
+                'barcode=' + encodeURIComponent(barcode) +
+                '&nama=' + encodeURIComponent(nama) +
+                '&harga=' + encodeURIComponent(harga)
+            );
+        }
+    </script>
+
+</body>
+
+</html>

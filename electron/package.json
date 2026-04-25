@@ -1,0 +1,19 @@
+{
+  "name": "majuapp",
+  "version": "1.0.0",
+  "appId": "com.maju.desktop",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "7.css": "^0.21.1",
+    "electron": "^40.6.1",
+    "electron-squirrel-startup": "^1.0.1"
+  }
+}

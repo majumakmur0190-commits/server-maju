@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan</title>
+    <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
+    <style>
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
+        #sidebar-container { width: 100%; flex-shrink: 0; }
+        main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+        .report-card { background: white; padding: 15px; border: 1px solid #8e8f8f; margin-bottom: 10px; }
+    </style>
+</head>
+ 
+<body>
+    <div id="sidebar-container"></div>
+
+    <!-- 🔹 Konten utama bergeser ke kanan -->
+    <main>
+        <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+            <div class="title-bar">
+                <div class="title-bar-text">Laporan Ringkasan</div>
+            </div>
+            <div class="window-body" style="flex: 1; padding: 10px; overflow: auto;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <fieldset style="flex: 1; min-width: 200px;">
+                        <legend>Total Penjualan</legend>
+                        <h3 style="margin: 10px 0;">Rp 24.500.000</h3>
+                    </fieldset>
+                    <fieldset style="flex: 1; min-width: 200px;">
+                        <legend>Barang Terjual</legend>
+                        <h3 style="margin: 10px 0;">325</h3>
+                    </fieldset>
+                    <fieldset style="flex: 1; min-width: 200px;">
+                        <legend>User Aktif</legend>
+                        <h3 style="margin: 10px 0;">12</h3>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./js/main.js"></script>
+    <script>
+        initializeApp(); // Panggil fungsi dari main.js
+    </script>
+</body>
+
+</html>

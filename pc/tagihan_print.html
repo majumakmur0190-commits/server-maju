@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Print Tagihan</title>
+
+    <style>
+        @page {
+            size: 21cm 14cm;
+            margin: 0.5cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .info-left,
+        .info-right {
+            width: 48%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #000;
+        }
+
+        th {
+            background: #f0f0f0;
+            padding: 2px;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 2px;
+            vertical-align: top;
+        }
+
+        td.number {
+            text-align: right;
+        }
+
+        .footer {
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2>TITIPAN TAGIHAN</h2>
+    </div>
+
+    <div class="info">
+        <div class="info-left">
+            <strong>ID Tagihan</strong> : <span id="tagihan_id">-</span><br>
+            <strong>Tanggal</strong> : <span id="tagihan_tanggal">-</span>
+        </div>
+        <div class="info-right">
+            <strong>Nama</strong> : <span id="tagihan_nama">-</span><br>
+            <strong>Jumlah</strong> : <span id="tagihan_jumlah">-</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>ID Invoice</th>
+                <th>Nama Pelanggan</th>
+                <th>Tanggal</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody id="detail_body">
+            <tr>
+                <td colspan="5" style="text-align:center">Memuat data...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer" id="footer-summary">
+        <div>
+            <!-- Keterangan bisa ditambahkan di sini jika perlu -->
+        </div>
+        <table style="width:45%">
+            <tr>
+                <td><strong>Total Tagihan</strong></td>
+                <td class="number" id="tagihan_total">-</td>
+            </tr>
+            <tr>
+                <td><strong>Total Setor</strong></td>
+                <td class="number" id="tagihan_setor">-</td>
+            </tr>
+            <tr>
+                <td><strong>Sisa Tagihan</strong></td>
+                <td class="number" id="sisa_tagihan">-</td>
+            </tr>
+        </table>
+    </div>
+
+
+    <script>
+        // Ambil ID dari URL browser
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+
+        if (!id) {
+            alert('ID Tagihan tidak ditemukan');
+            window.close();
+        }
+
+        const API_URL = `../api/tagihan.php?id=${id}`;
+
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(response => {
+
+                if (response.status !== 'success') {
+                    alert('Gagal mengambil data');
+                    return;
+                }
+
+                const d = response.data;
+
+                // Header
+                document.getElementById('tagihan_id').textContent = d.tagihan_id;
+                document.getElementById('tagihan_tanggal').textContent = d.tagihan_tanggal;
+                document.getElementById('tagihan_nama').textContent = d.tagihan_nama;
+                document.getElementById('tagihan_jumlah').textContent = d.tagihan_jumlah;
+
+                const totalTagihan = parseFloat(d.tagihan_total) || 0;
+                const totalSetor = parseFloat(d.tagihan_setor) || 0;
+                const sisaTagihan = totalTagihan - totalSetor;
+
+                const formatRupiah = (num) => num.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
+
+                document.getElementById('tagihan_total').textContent = formatRupiah(totalTagihan);
+                document.getElementById('tagihan_setor').textContent = formatRupiah(totalSetor);
+                document.getElementById('sisa_tagihan').textContent = formatRupiah(sisaTagihan);
+
+                // Sembunyikan footer jika tidak ada total
+                if (totalTagihan === 0 && totalSetor === 0) {
+                    document.getElementById('footer-summary').style.display = 'none';
+                }
+                // Detail
+                const tbody = document.getElementById('detail_body');
+                tbody.innerHTML = '';
+
+                d.details.forEach((item, index) => {
+                    tbody.innerHTML += `
+                <tr>
+                    <td style="text-align:center">${index + 1}</td>
+                    <td>${item.tagihan_pelanggan_id}</td>
+                    <td>${item.nama_pelanggan}</td>
+                    <td style="text-align:center">${new Date(item.tanggal_transaksi).toLocaleDateString('id-ID')}</td>
+                    <td class="number">${item.tagihan_subtotal.toLocaleString('id-ID')}</td>
+                </tr>
+            `;
+                });
+
+                // otomatis print setelah data siap
+                setTimeout(() => window.print(), 500);
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Tidak bisa terhubung ke server');
+            });
+    </script>
+
+</body>
+
+</html>
