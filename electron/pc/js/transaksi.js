@@ -680,7 +680,17 @@ btnPrintInvoice.addEventListener("click", () => {
     customConfirm("Simpan perubahan sebelum mencetak?", async () => {
         const saveResult = await saveTransaction();
         if (saveResult.success && saveResult.id) {
-            window.open(`http://localhost:1987/maju/api/print.php?id=${saveResult.id}`, '_blank');
+            const config = await window.electronAPI.loadConfig();
+            const printerName = config.selectedPrinter;
+            const printUrl = `http://${SERVER_IP}:1987/maju/api/print.php?id=${saveResult.id}`;
+
+            if (window.electronAPI && window.electronAPI.printURL && printerName) {
+                console.log("Mengirim ke printer:", printerName);
+                window.electronAPI.printURL(printUrl, printerName);
+            } else {
+                // Fallback jika printer belum diatur atau dijalankan di luar Electron
+                window.open(printUrl, '_blank');
+            }
         }
     });
 });

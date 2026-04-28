@@ -1,19 +1,41 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Pengaturan Aplikasi</title>
     <link rel="stylesheet" href="../node_modules/7.css/dist/7.css">
     <style>
-        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; background-color: #5ea0d6; font-family: "Segoe UI", sans-serif; }
-        #sidebar-container { width: 100%; flex-shrink: 0; }
-        main { flex-grow: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background-color: #5ea0d6;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        #sidebar-container {
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        main {
+            flex-grow: 1;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
     </style>
 </head>
+
 <body>
     <div id="sidebar-container"></div>
     <main>
-        <div class="window" style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
+        <div class="window"
+            style="height: 100%; width: 100%; border: 0; box-shadow: none; display: flex; flex-direction: column;">
             <div class="title-bar">
                 <div class="title-bar-text">Pengaturan Sistem</div>
             </div>
@@ -35,6 +57,28 @@
                     </div>
                 </fieldset>
 
+                <fieldset style="margin-top: 15px;">
+                    <legend>Pilih Printer Penjualan</legend>
+                    <div class="field-row-stacked" style="width: 100%">
+                        <label for="printerSelect">Printer</label>
+                        <select id="printerSelect" style="width: 100%">
+                            <option value="">Pilih printer</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset style="margin-top: 15px;">
+                    <legend>Pilih Printer Penagihan</legend>
+                    <div class="field-row-stacked" style="width: 100%">
+                        <label for="printerTagihanSelect">Printer</label>
+                        <select id="printerTagihanSelect" style="width: 100%">
+                            <option value="">Pilih printer</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                </fieldset>
+
                 <div style="margin-top: 20px; text-align: right; gap: 10px; display: flex; justify-content: flex-end;">
                     <button id="btnReset">Default</button>
                     <button id="btnSave" class="default">Simpan Perubahan</button>
@@ -49,20 +93,54 @@
 
         const ipInput = document.getElementById('serverIp');
         const limitInput = document.getElementById('paginationLimit');
+        const printerSelect = document.getElementById('printerSelect');
+        const printerTagihanSelect = document.getElementById('printerTagihanSelect');
         const btnSave = document.getElementById('btnSave');
         const btnReset = document.getElementById('btnReset');
+
+        async function populatePrinters() {
+            try {
+                // Memanggil API Electron untuk mendapatkan daftar printer sistem
+                const printers = await window.electronAPI.getPrinters();
+                
+                // Bersihkan opsi lama kecuali placeholder
+                printerSelect.innerHTML = '<option value="">Pilih printer</option>';
+                printerTagihanSelect.innerHTML = '<option value="">Pilih printer</option>';
+                
+                printers.forEach(printer => {
+                    const opt1 = document.createElement('option');
+                    opt1.value = printer.name;
+                    opt1.textContent = printer.name + (printer.isDefault ? ' (Default)' : '');
+                    printerSelect.appendChild(opt1);
+
+                    const opt2 = document.createElement('option');
+                    opt2.value = printer.name;
+                    opt2.textContent = printer.name + (printer.isDefault ? ' (Default)' : '');
+                    printerTagihanSelect.appendChild(opt2);
+                });
+            } catch (err) {
+                console.error("Gagal memuat daftar printer:", err);
+            }
+        }
 
         async function loadSettings() {
             // Muat dari config.json
             const config = await window.electronAPI.loadConfig();
-            
+
             ipInput.value = config.serverIp || localStorage.getItem('server_ip') || 'localhost';
             limitInput.value = config.paginationLimit || localStorage.getItem('pagination_limit') || 10;
+
+            // Muat daftar printer dan set value yang tersimpan
+            await populatePrinters();
+            printerSelect.value = config.selectedPrinter || localStorage.getItem('selected_printer') || '';
+            printerTagihanSelect.value = config.selectedPrinterTagihan || localStorage.getItem('selected_printer_tagihan') || '';
         }
 
         btnSave.addEventListener('click', async () => {
             const newIp = ipInput.value.trim();
             const newLimit = parseInt(limitInput.value);
+            const selectedPrinter = printerSelect.value;
+            const selectedPrinterTagihan = printerTagihanSelect.value;
 
             if (!newIp || isNaN(newLimit)) {
                 customAlert("Harap isi semua data dengan benar.");
@@ -71,17 +149,21 @@
 
             const config = {
                 serverIp: newIp,
-                paginationLimit: newLimit
+                paginationLimit: newLimit,
+                selectedPrinter: selectedPrinter,
+                selectedPrinterTagihan: selectedPrinterTagihan
             };
 
             // Simpan ke File JSON (Permanen)
             const success = await window.electronAPI.saveConfig(config);
-            
+
             if (success) {
                 // Update LocalStorage agar efeknya instan di renderer
                 localStorage.setItem('server_ip', newIp);
                 localStorage.setItem('pagination_limit', newLimit);
-                
+                localStorage.setItem('selected_printer', selectedPrinter);
+                localStorage.setItem('selected_printer_tagihan', selectedPrinterTagihan);
+
                 customAlert("Pengaturan berhasil disimpan!", "Sukses");
             } else {
                 customAlert("Gagal menyimpan ke file konfigurasi.", "Error");
@@ -91,9 +173,12 @@
         btnReset.addEventListener('click', () => {
             ipInput.value = 'localhost';
             limitInput.value = 10;
+            printerSelect.value = '';
+            printerTagihanSelect.value = '';
         });
 
         loadSettings();
     </script>
 </body>
+
 </html>

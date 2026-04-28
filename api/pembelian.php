@@ -27,7 +27,8 @@ if ($method === 'GET') {
         if ($pembelian) {
             // Ambil item detail
             // Asumsi kolom foreign key di detail_pembelian adalah pembelian_id
-            $sql_detail = "SELECT dp.*, b.nama_barang, b.barcode 
+            $sql_detail = "SELECT dp.*, b.nama_barang, b.barcode,
+                           dp.dis_1 AS diskon1, dp.dis_2 AS diskon2, dp.dis_3 AS diskon3, dp.dis_4 AS diskon4
                            FROM detail_pembelian dp 
                            JOIN barang b ON dp.barang_id = b.barang_id 
                            WHERE dp.pembelian_id = ? 
@@ -36,8 +37,15 @@ if ($method === 'GET') {
             $stmt_detail->bind_param("i", $id);
             $stmt_detail->execute();
             $details = $stmt_detail->get_result()->fetch_all(MYSQLI_ASSOC);
-            
+
             $pembelian['details'] = $details;
+
+            // Decode data diskon tambahan agar bisa dibaca langsung oleh frontend
+            $dis_data = json_decode($pembelian['dis_tambahan'] ?? '{}', true);
+            if ($dis_data) {
+                $pembelian = array_merge($pembelian, $dis_data);
+            }
+
             echo json_encode(["status" => "success", "data" => $pembelian]);
         } else {
             echo json_encode(["status" => "error", "message" => "Pembelian tidak ditemukan"]);
@@ -59,12 +67,13 @@ if ($method === 'GET') {
 } elseif ($method === 'POST') {
     // Buat Pembelian Baru
     $input = json_decode(file_get_contents("php://input"), true);
-    
+
     $user_id = $input['user_id'] ?? 0;
     $suplier_id = $input['suplier_id'] ?? null;
     $tanggal = $input['tanggal'] ?? date('Y-m-d');
     $keterangan = $input['keterangan'] ?? '';
     $items = $input['items'] ?? [];
+    $globalDiskon = $input['globalDiskon'] ?? [];
 
     if (!$suplier_id) {
         echo json_encode(["status" => "error", "message" => "Suplier wajib dipilih."]);
@@ -91,17 +100,26 @@ if ($method === 'GET') {
         foreach ($items as $item) {
             $total_barang += $item['subtotal'];
         }
-        $total_akhir = $total_barang;
+
+        // Kalkulasi Total Akhir dengan Diskon Global (Persen lalu Nominal)
+        $g_persen = floatval($globalDiskon['global_diskon_persen'] ?? 0);
+        $g_nominal = floatval($globalDiskon['global_diskon_nominal'] ?? 0);
+        
+        $total_akhir = $total_barang * (1 - $g_persen / 100);
+        $total_akhir -= $g_nominal;
+        if ($total_akhir < 0) $total_akhir = 0;
+
+        $dis_tambahan_json = json_encode($globalDiskon);
 
         // Insert Pembelian
-        $sql = "INSERT INTO pembelian (tanggal, user_id, suplier_id, total, keterangan, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
+        $sql = "INSERT INTO pembelian (tanggal, user_id, suplier_id, total, dis_tambahan, keterangan, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siids", $tanggal, $user_id, $suplier_id, $total_akhir, $keterangan);
+        $stmt->bind_param("siidss", $tanggal, $user_id, $suplier_id, $total_akhir, $dis_tambahan_json, $keterangan);
         $stmt->execute();
         $pembelian_id = $conn->insert_id;
 
         // Insert Detail & Update Stok (BERTAMBAH)
-        $sql_detail = "INSERT INTO detail_pembelian (pembelian_id, detail_urut, barang_id, jumlah, harga_satuan, subtotal, pembelian_expired) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $sql_detail = "INSERT INTO detail_pembelian (pembelian_id, detail_urut, barang_id, jumlah, dis_1, dis_2, dis_3, dis_4, harga_satuan, subtotal, pembelian_expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt_detail = $conn->prepare($sql_detail);
 
         $sql_update_stok = "UPDATE barang SET stok = stok + ?, harga_beli = ? WHERE barang_id = ?";
@@ -110,7 +128,12 @@ if ($method === 'GET') {
         foreach ($items as $index => $item) {
             $urut = $index + 1;
             $expired = !empty($item['pembelian_expired']) ? $item['pembelian_expired'] : null;
-            $stmt_detail->bind_param("iiidids", $pembelian_id, $urut, $item['barang_id'], $item['jumlah'], $item['harga_satuan'], $item['subtotal'], $expired);
+            $d1 = $item['diskon1'] ?? 0;
+            $d2 = $item['diskon2'] ?? 0;
+            $d3 = $item['diskon3'] ?? 0;
+            $d4 = $item['diskon4'] ?? 0;
+
+            $stmt_detail->bind_param("iiiidddddds", $pembelian_id, $urut, $item['barang_id'], $item['jumlah'], $d1, $d2, $d3, $d4, $item['harga_satuan'], $item['subtotal'], $expired);
             $stmt_detail->execute();
 
             // Tambah stok barang
@@ -140,6 +163,7 @@ if ($method === 'GET') {
     $tanggal = $input['tanggal'] ?? date('Y-m-d');
     $keterangan = $input['keterangan'] ?? '';
     $items = $input['items'];
+    $globalDiskon = $input['globalDiskon'] ?? [];
 
     if (!$suplier_id) {
         echo json_encode(["status" => "error", "message" => "Suplier wajib dipilih."]);
@@ -176,16 +200,26 @@ if ($method === 'GET') {
 
         // 3. Hitung Total Baru & Update Tabel Utama
         $total_barang = 0;
-        foreach ($items as $item) $total_barang += $item['subtotal'];
-        $total_akhir = $total_barang;
+        foreach ($items as $item)
+            $total_barang += $item['subtotal'];
 
-        $sql_update = "UPDATE pembelian SET tanggal=?, suplier_id=?, total=?, keterangan=? WHERE pembelian_id=?";
+        // Kalkulasi Total Akhir dengan Diskon Global
+        $g_persen = floatval($globalDiskon['global_diskon_persen'] ?? 0);
+        $g_nominal = floatval($globalDiskon['global_diskon_nominal'] ?? 0);
+        
+        $total_akhir = $total_barang * (1 - $g_persen / 100);
+        $total_akhir -= $g_nominal;
+        if ($total_akhir < 0) $total_akhir = 0;
+
+        $dis_tambahan_json = json_encode($globalDiskon);
+
+        $sql_update = "UPDATE pembelian SET tanggal=?, suplier_id=?, total=?, dis_tambahan=?, keterangan=? WHERE pembelian_id=?";
         $stmt_up = $conn->prepare($sql_update);
-        $stmt_up->bind_param("sidsi", $tanggal, $suplier_id, $total_akhir, $keterangan, $id);
+        $stmt_up->bind_param("sidssi", $tanggal, $suplier_id, $total_akhir, $dis_tambahan_json, $keterangan, $id);
         $stmt_up->execute();
 
         // 4. Insert Detail Baru & Tambah Stok Baru
-        $sql_ins_detail = "INSERT INTO detail_pembelian (pembelian_id, detail_urut, barang_id, jumlah, harga_satuan, subtotal, pembelian_expired) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $sql_ins_detail = "INSERT INTO detail_pembelian (pembelian_id, detail_urut, barang_id, jumlah, dis_1, dis_2, dis_3, dis_4, harga_satuan, subtotal, pembelian_expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt_ins = $conn->prepare($sql_ins_detail);
         $sql_add_stok = "UPDATE barang SET stok = stok + ?, harga_beli = ? WHERE barang_id = ?";
         $stmt_add = $conn->prepare($sql_add_stok);
@@ -193,7 +227,12 @@ if ($method === 'GET') {
         foreach ($items as $idx => $item) {
             $urut = $idx + 1;
             $expired = !empty($item['pembelian_expired']) ? $item['pembelian_expired'] : null;
-            $stmt_ins->bind_param("iiidids", $id, $urut, $item['barang_id'], $item['jumlah'], $item['harga_satuan'], $item['subtotal'], $expired);
+            $d1 = $item['diskon1'] ?? 0;
+            $d2 = $item['diskon2'] ?? 0;
+            $d3 = $item['diskon3'] ?? 0;
+            $d4 = $item['diskon4'] ?? 0;
+
+            $stmt_ins->bind_param("iiiidddddds", $id, $urut, $item['barang_id'], $item['jumlah'], $d1, $d2, $d3, $d4, $item['harga_satuan'], $item['subtotal'], $expired);
             $stmt_ins->execute();
 
             $stmt_add->bind_param("idi", $item['jumlah'], $item['harga_satuan'], $item['barang_id']);

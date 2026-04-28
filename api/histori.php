@@ -19,7 +19,7 @@ if ($aksi == "cari") {
     }
  
     $id_pelanggan = intval($_GET['id_pelanggan']);
-    $sql = "SELECT * FROM histori WHERE id_pelanggan = $id_pelanggan ORDER BY tanggal DESC";
+    $sql = "SELECT * FROM histori_penjualan WHERE id_pelanggan = $id_pelanggan ORDER BY tanggal DESC";
     $result = $conn->query($sql);
 
     $data = [];
@@ -45,7 +45,7 @@ if ($aksi == "getHarga") {
     $id_barang = $_GET['id_barang'];
 
     $sql = "SELECT harga_satuan 
-            FROM histori 
+            FROM histori_penjualan 
             WHERE id_pelanggan='$id_pelanggan' 
               AND id_barang='$id_barang'
             ORDER BY tanggal DESC 
@@ -90,7 +90,7 @@ if ($aksi == "saveHistori") {
         // 1. cek histori terakhir
         $cek = $conn->query("
             SELECT id_histori, harga_satuan 
-            FROM histori 
+            FROM histori_penjualan 
             WHERE id_pelanggan='$id_pelanggan' AND id_barang='$id_barang'
             ORDER BY tanggal DESC LIMIT 1
         ");
@@ -100,7 +100,7 @@ if ($aksi == "saveHistori") {
             // INSERT histori pertama kali
             // -------------------------------------------
             $conn->query("
-                INSERT INTO histori (id_pelanggan, id_barang, harga_satuan) 
+                INSERT INTO histori_penjualan (id_pelanggan, id_barang, harga_satuan) 
                 VALUES ('$id_pelanggan', '$id_barang', '$harga_baru')
             ");
 
@@ -114,7 +114,7 @@ if ($aksi == "saveHistori") {
                 // UPDATE histori jika harga berubah
                 // -------------------------------------------
                 $conn->query("
-                    UPDATE histori 
+                    UPDATE histori_penjualan 
                     SET harga_satuan='$harga_baru', tanggal=NOW() 
                     WHERE id_histori='$id_histori'
                 ");
@@ -146,7 +146,7 @@ if ($aksi == "edit") {
     $id_barang = $post['id_barang'];
     $harga_satuan = $post['harga_satuan'];
 
-    $sql = "UPDATE histori SET 
+    $sql = "UPDATE histori_penjualan SET 
                 id_pelanggan = '$id_pelanggan',
                 id_barang = '$id_barang',
                 harga_satuan = '$harga_satuan'
@@ -177,7 +177,7 @@ if ($aksi == "delete") {
 
     $id_barang = $post['id_barang'];
 
-    $sql = "DELETE FROM histori WHERE id_barang = '$id_barang'";
+    $sql = "DELETE FROM histori_penjualan WHERE id_barang = '$id_barang'";
 
     if ($conn->query($sql)) {
         echo json_encode(["status" => "success", "message" => "Histori berhasil dihapus"]);
@@ -195,7 +195,7 @@ if ($aksi == "hapus_barang") {
     $barang_id = isset($_GET['barang_id']) ? intval($_GET['barang_id']) : 0;
 
     if ($barang_id > 0) {
-        $sql = "DELETE FROM histori WHERE id_barang = '$barang_id'";
+        $sql = "DELETE FROM histori_penjualan WHERE id_barang = '$barang_id'";
         if ($conn->query($sql)) {
             echo json_encode(["status" => "success", "message" => "Histori harga barang berhasil direset"]);
         } else {

@@ -1,6 +1,6 @@
 // Panggil fungsi dari main.js
 // initializeApp();
- 
+
 // 🔹 Deklarasi Konstanta & Variabel
 const SERVER_IP = localStorage.getItem('server_ip') || 'localhost';
 const API_URL_PEMBELIAN = `http://${SERVER_IP}:1987/maju/api/pembelian.php`;
@@ -24,6 +24,79 @@ const suplierModal = document.getElementById("suplierModal");
 const suplierSearchInput = document.getElementById("suplierSearchInput");
 const suplierListContainer = document.getElementById("suplierList");
 
+// Elemen Modal Barang
+const productModal = document.getElementById("productModal");
+
+function openProductModal() {
+    productModal.style.display = "flex";
+    productSearchInput.focus();
+}
+
+function closeProductModal() {
+    productModal.style.display = "none";
+}
+
+// Modal Edit Item Functions
+function openEditItemModal(barangId) {
+    const row = cartItemsContainer.querySelector(`[data-barang-id="${barangId}"]`);
+    if (!row) return;
+
+    const nama = row.querySelector('.cart-item-name').textContent;
+    const expired = row.querySelector('input[name="pembelian_expired"]').value;
+    const jumlah = row.querySelector('input[name="jumlah"]').value;
+    const harga = row.querySelector('input[name="harga_satuan"]').value;
+    const d1 = row.querySelector('input[name="diskon1"]').value;
+    const d2 = row.querySelector('input[name="diskon2"]').value;
+    const d3 = row.querySelector('input[name="diskon3"]').value;
+    const d4 = row.querySelector('input[name="diskon4"]').value;
+
+    document.getElementById('edit-barang-id').value = barangId;
+    document.getElementById('edit-nama-barang').textContent = nama;
+    document.getElementById('edit-expired').value = expired;
+    document.getElementById('edit-jumlah').value = jumlah;
+    document.getElementById('edit-harga').value = harga;
+    document.getElementById('edit-diskon1').value = d1;
+    document.getElementById('edit-diskon2').value = d2;
+    document.getElementById('edit-diskon3').value = d3;
+    document.getElementById('edit-diskon4').value = d4;
+
+    calculateModalSubtotal();
+    document.getElementById('editItemModal').style.display = 'flex';
+}
+
+function calculateModalSubtotal() {
+    const jumlah = parseInt(document.getElementById('edit-jumlah').value, 10) || 0;
+    const harga = parseInt(document.getElementById('edit-harga').value, 10) || 0;
+    const d1 = parseFloat(document.getElementById('edit-diskon1').value) || 0;
+    const d2 = parseFloat(document.getElementById('edit-diskon2').value) || 0;
+    const d3 = parseFloat(document.getElementById('edit-diskon3').value) || 0;
+    const d4 = parseFloat(document.getElementById('edit-diskon4').value) || 0;
+
+    const subtotal = (jumlah * harga) * (1 - d1 / 100) * (1 - d2 / 100) * (1 - d3 / 100) * (1 - d4 / 100);
+    document.getElementById('edit-subtotal-display').textContent = formatRupiah(subtotal);
+}
+
+function closeEditItemModal() {
+    document.getElementById('editItemModal').style.display = 'none';
+}
+
+function applyItemEdit() {
+    const barangId = document.getElementById('edit-barang-id').value;
+    const row = cartItemsContainer.querySelector(`[data-barang-id="${barangId}"]`);
+    if (!row) return;
+
+    row.querySelector('input[name="pembelian_expired"]').value = document.getElementById('edit-expired').value;
+    row.querySelector('input[name="jumlah"]').value = document.getElementById('edit-jumlah').value;
+    row.querySelector('input[name="harga_satuan"]').value = document.getElementById('edit-harga').value;
+    row.querySelector('input[name="diskon1"]').value = document.getElementById('edit-diskon1').value;
+    row.querySelector('input[name="diskon2"]').value = document.getElementById('edit-diskon2').value;
+    row.querySelector('input[name="diskon3"]').value = document.getElementById('edit-diskon3').value;
+    row.querySelector('input[name="diskon4"]').value = document.getElementById('edit-diskon4').value;
+
+    calculateItemSubtotal(barangId);
+    closeEditItemModal();
+}
+
 // 🔹 Fungsi untuk update nomor urut di keranjang
 function updateCartNumbers() {
     const cartItems = cartItemsContainer.querySelectorAll('[data-barang-id]');
@@ -44,7 +117,7 @@ function kunciSuplier() {
     suplierDisplayInput.setAttribute('readonly', true);
     const btnPilih = document.getElementById('btnPilihSuplier');
     if (btnPilih) btnPilih.style.display = 'none';
-    
+
     const noteSuplier = document.getElementById('noteSuplier');
     if (noteSuplier) noteSuplier.style.display = 'block';
 }
@@ -161,7 +234,6 @@ productNextButton.addEventListener('click', () => { const totalPages = Math.ceil
 
 // 🔹 Tambah produk ke keranjang
 async function addProductToCart(barangId, initialData = null) {
-    // ✅ Cek apakah suplier sudah dipilih (kecuali saat mode edit)
     const suplierId = suplierIdInput.value;
     if (!suplierId && !initialData) {
         customAlert("Mohon pilih suplier terlebih dahulu.");
@@ -178,49 +250,53 @@ async function addProductToCart(barangId, initialData = null) {
         const barang = initialData ? initialData : await getProductById(barangId);
         if (!barang) return;
 
-        // ✅ Ambil harga terakhir dari histori atau gunakan harga default
         let hargaBeli = initialData ? initialData.harga_satuan : (barang.harga_beli || 0);
-        if (!initialData && suplierId) { // Hanya cari histori jika bukan mode edit & suplier dipilih
+        if (!initialData && suplierId) {
             const hargaHistori = await getHargaHistori(suplierId, barang.barang_id);
-            if (hargaHistori !== null) {
-                hargaBeli = hargaHistori;
-            }
+            if (hargaHistori !== null) hargaBeli = hargaHistori;
         }
-        const jumlahAwal = initialData ? initialData.jumlah : 1;
-        const expiredAwal = initialData && initialData.pembelian_expired ? initialData.pembelian_expired : "";
+
+        // Siapkan data awal untuk baris baru
+        const data = {
+            expired: initialData?.pembelian_expired || "",
+            jumlah: initialData?.jumlah || 1,
+            harga: hargaBeli,
+            d1: initialData?.diskon1 || 0,
+            d2: initialData?.diskon2 || 0,
+            d3: initialData?.diskon3 || 0,
+            d4: initialData?.diskon4 || 0
+        };
 
         const rowHtml = `
-            <div data-barang-id="${barang.barang_id}" 
-                 class="cart-row grid-kolom" 
-                 onclick="warnabaris(this)" 
+            <div data-barang-id="${barang.barang_id}" class="cart-row grid-kolom" 
+                 onclick="warnabaris(this)" ondblclick="openEditItemModal(${barang.barang_id})" 
                  oncontextmenu="showContextMenu(event, ${barang.barang_id})">
                 <div class="cart-item-number"></div>
                 <div class="cart-item-name">${barang.nama_barang}</div>
-                <div>
-                    <input type="date" name="pembelian_expired" value="${expiredAwal}" class="cart-input text-xs">
-                </div>
-                <div>
-                    <input type="number" name="jumlah" value="${jumlahAwal}" min="1" class="cart-input">
-                </div>
-                <div>
-                    <input type="number" name="harga_satuan" value="${hargaBeli}" class="cart-input">
-                </div>
-                <div class="cart-subtotal">
-                    <span class="item-subtotal">${formatRupiah(hargaBeli * jumlahAwal)}</span>
-                </div>
+                <div class="display-expired"></div>
+                <div class="display-jumlah"></div>
+                <div class="display-harga"></div>
+                <div class="display-d1"></div>
+                <div class="display-d2"></div>
+                <div class="display-d3"></div>
+                <div class="display-d4"></div>
+                <div class="cart-subtotal"><span class="item-subtotal"></span></div>
+                <input type="hidden" name="pembelian_expired" value="${data.expired}">
+                <input type="hidden" name="jumlah" value="${data.jumlah}">
+                <input type="hidden" name="harga_satuan" value="${data.harga}">
+                <input type="hidden" name="diskon1" value="${data.d1}">
+                <input type="hidden" name="diskon2" value="${data.d2}">
+                <input type="hidden" name="diskon3" value="${data.d3}">
+                <input type="hidden" name="diskon4" value="${data.d4}">
             </div>`;
 
         cartItemsContainer.insertAdjacentHTML('beforeend', rowHtml);
         kunciSuplier(); // Kunci suplier agar tidak diganti di tengah jalan
 
-        const newRow = cartItemsContainer.querySelector(`[data-barang-id="${barang.barang_id}"]`);
-
-        newRow.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', () => calculateItemSubtotal(barang.barang_id));
-        });
         calculateItemSubtotal(barang.barang_id);
     }
     updateCartNumbers();
+    if (!initialData) closeProductModal();
 }
 
 // 🔹 Highlight baris saat diklik
@@ -266,9 +342,28 @@ function calculateItemSubtotal(barangId) {
     const row = cartItemsContainer.querySelector(`[data-barang-id="${barangId}"]`);
     if (!row) return;
 
-    const jumlah = parseInt(row.querySelector('input[name="jumlah"]').value, 10) || 0;
-    const harga = parseInt(row.querySelector('input[name="harga_satuan"]').value, 10) || 0;
-    const subtotal = jumlah * harga;
+    const inputExpired = row.querySelector('input[name="pembelian_expired"]');
+    const inputJumlah = row.querySelector('input[name="jumlah"]');
+    const inputHarga = row.querySelector('input[name="harga_satuan"]');
+    const d1Val = parseFloat(row.querySelector('input[name="diskon1"]').value) || 0;
+    const d2Val = parseFloat(row.querySelector('input[name="diskon2"]').value) || 0;
+    const d3Val = parseFloat(row.querySelector('input[name="diskon3"]').value) || 0;
+    const d4Val = parseFloat(row.querySelector('input[name="diskon4"]').value) || 0;
+
+    const jumlah = parseInt(inputJumlah.value, 10) || 0;
+    const harga = parseInt(inputHarga.value, 10) || 0;
+
+    // Kalkulasi diskon bertingkat: Harga * (1-d1) * (1-d2) * (1-d3) * (1-d4)
+    const subtotal = (jumlah * harga) * (1 - d1Val / 100) * (1 - d2Val / 100) * (1 - d3Val / 100) * (1 - d4Val / 100);
+
+    // Update display text
+    row.querySelector('.display-expired').textContent = inputExpired.value || '-';
+    row.querySelector('.display-jumlah').textContent = jumlah;
+    row.querySelector('.display-harga').textContent = formatRupiah(harga);
+    row.querySelector('.display-d1').textContent = d1Val;
+    row.querySelector('.display-d2').textContent = d2Val;
+    row.querySelector('.display-d3').textContent = d3Val;
+    row.querySelector('.display-d4').textContent = d4Val;
 
     row.querySelector('.item-subtotal').textContent = formatRupiah(subtotal);
     calculateGrandTotal();
@@ -282,7 +377,14 @@ function calculateGrandTotal() {
         totalItems += subtotalValue;
     });
 
-    grandTotalSpan.textContent = formatRupiah(totalItems);
+    const globalDiscPersen = parseFloat(document.getElementById('global-diskon-persen').value) || 0;
+    const globalDiscNominal = parseFloat(document.getElementById('global-diskon-nominal').value) || 0;
+
+    let finalTotal = totalItems * (1 - globalDiscPersen / 100);
+    finalTotal -= globalDiscNominal;
+    if (finalTotal < 0) finalTotal = 0;
+
+    grandTotalSpan.textContent = formatRupiah(finalTotal);
 }
 
 // 🔹 Ambil harga terakhir dari histori pembelian
@@ -308,6 +410,8 @@ pembelianForm.addEventListener("submit", async e => {
     const suplier_id = suplierIdInput.value;
     const tanggal = document.getElementById("tanggal").value;
     const keterangan = document.getElementById("keterangan").value;
+    const global_diskon_persen = parseFloat(document.getElementById("global-diskon-persen").value) || 0;
+    const global_diskon_nominal = parseFloat(document.getElementById("global-diskon-nominal").value) || 0;
 
     // ✅ Validasi Suplier
     if (!suplier_id) {
@@ -322,6 +426,10 @@ pembelianForm.addEventListener("submit", async e => {
         const barang_id = row.dataset.barangId;
         const jumlah = parseInt(row.querySelector('input[name="jumlah"]').value, 10) || 0;
         const harga_satuan = parseInt(row.querySelector('input[name="harga_satuan"]').value, 10) || 0;
+        const diskon1 = parseFloat(row.querySelector('input[name="diskon1"]').value) || 0;
+        const diskon2 = parseFloat(row.querySelector('input[name="diskon2"]').value) || 0;
+        const diskon3 = parseFloat(row.querySelector('input[name="diskon3"]').value) || 0;
+        const diskon4 = parseFloat(row.querySelector('input[name="diskon4"]').value) || 0;
         const subtotalText = row.querySelector('.item-subtotal').textContent;
         const subtotal = parseFloat(subtotalText.replace(/Rp|\./g, '').replace(',', '.')) || 0;
         const pembelian_expiredInput = row.querySelector('input[name="pembelian_expired"]');
@@ -336,7 +444,7 @@ pembelianForm.addEventListener("submit", async e => {
         }
 
         if (barang_id && jumlah > 0) {
-            items.push({ barang_id, jumlah, harga_satuan, subtotal, pembelian_expired });
+            items.push({ barang_id, jumlah, harga_satuan, diskon1, diskon2, diskon3, diskon4, subtotal, pembelian_expired });
         }
     });
 
@@ -350,7 +458,19 @@ pembelianForm.addEventListener("submit", async e => {
         return;
     }
 
-    const dataToSend = { user_id, suplier_id: suplier_id, tanggal, keterangan, items };
+    // simpan variable diskon global ke dalam data yang akan dikirim
+    const globalDiskon = {
+        global_diskon_persen,
+        global_diskon_nominal
+    };
+    const dataToSend = {
+        user_id,
+        suplier_id: suplier_id,
+        tanggal,
+        keterangan,
+        items,
+        globalDiskon
+    };
 
     const url = pembelian_id ? `${API_URL_PEMBELIAN}?id=${pembelian_id}` : API_URL_PEMBELIAN;
     const method = pembelian_id ? "PUT" : "POST";
@@ -443,8 +563,8 @@ document.getElementById("btnPilihSuplier").addEventListener("click", () => {
         modalWindow.style.width = '80%';
         modalWindow.style.maxWidth = '800px';
     }
-    suplierModal.style.display = "flex"; 
-    renderSuplierList(allSuplier); 
+    suplierModal.style.display = "flex";
+    renderSuplierList(allSuplier);
 });
 document.getElementById("btnBatalSuplier").addEventListener("click", () => suplierModal.style.display = "none");
 suplierSearchInput.addEventListener("input", (e) => renderSuplierList(allSuplier.filter(s => s.nama_suplier.toLowerCase().includes(e.target.value.toLowerCase()))));
@@ -456,7 +576,7 @@ async function initEditMode() {
     if (!id) return;
 
     document.getElementById('pembelian_id').value = id;
-    
+
     try {
         const res = await fetch(`${API_URL_PEMBELIAN}?id=${id}`);
         const json = await res.json();
@@ -465,6 +585,8 @@ async function initEditMode() {
             if (data.suplier_id) selectSuplier(data.suplier_id, data.nama_suplier || 'Suplier');
             document.getElementById('tanggal').value = data.tanggal;
             document.getElementById('keterangan').value = data.keterangan;
+            document.getElementById('global-diskon-persen').value = data.global_diskon_persen || 0;
+            document.getElementById('global-diskon-nominal').value = data.global_diskon_nominal || 0;
 
             for (const item of data.details) {
                 // Pastikan struktur item sesuai dengan yang diharapkan addProductToCart
@@ -478,6 +600,16 @@ async function initEditMode() {
 loadAllSuplier();
 searchProductsFromAPI('');
 initEditMode();
+
+// Event listeners untuk perhitungan subtotal otomatis di Modal Edit
+document.getElementById('edit-jumlah').addEventListener('input', calculateModalSubtotal);
+document.getElementById('edit-harga').addEventListener('input', calculateModalSubtotal);
+document.getElementById('edit-diskon1').addEventListener('input', calculateModalSubtotal);
+document.getElementById('edit-diskon2').addEventListener('input', calculateModalSubtotal);
+document.getElementById('edit-diskon3').addEventListener('input', calculateModalSubtotal);
+document.getElementById('edit-diskon4').addEventListener('input', calculateModalSubtotal);
+document.getElementById('global-diskon-persen').addEventListener('input', calculateGrandTotal);
+document.getElementById('global-diskon-nominal').addEventListener('input', calculateGrandTotal);
 
 // Set User ID
 const userData = sessionStorage.getItem('loggedInUser');

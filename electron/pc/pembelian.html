@@ -45,6 +45,29 @@
             align-items: center;
             z-index: 999;
         }
+
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #8e8f8f;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 10000;
+            padding: 0px; /* Padding dihilangkan */
+            min-width: 80px;
+        }
+
+        .context-menu-item {
+            padding: 2px 5px; /* Padding disesuaikan agar teks tidak terlalu mepet */
+            cursor: pointer;
+            font-size: 12px; /* Ukuran font disesuaikan */
+        }
+
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 
@@ -75,13 +98,12 @@
                 <div style="flex: 1; overflow: auto; border: 1px solid #8e8f8f; background: white;">
                     <table style="width: 100%;">
                         <thead>
-                            <tr onclick="warnabaris(this)">
+                            <tr>
                                 <th>ID</th>
                                 <th>Tanggal</th>
                                 <th>Suplier</th>
                                 <th>User</th>
                                 <th style="text-align: right;">Total (Rp)</th>
-                                <th style="text-align: center;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="pembelianTable"></tbody>
@@ -97,6 +119,11 @@
             </div>
         </div>
     </main>
+    <!-- 🖱️ Custom Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item" id="menuDelete">Hapus</div>
+    </div>
+
 
     <script src="./js/main.js"></script>
     <script>
@@ -108,6 +135,7 @@
 
         const pembelianTableBody = document.getElementById("pembelianTable");
         const searchInput = document.getElementById("searchInput");
+        const contextMenu = document.getElementById("contextMenu");
 
         // Variabel untuk data dan paginasi
         let allPembelian = [];
@@ -128,7 +156,7 @@
 
         // 🔹 Ambil semua data pembelian
         async function fetchAllPembelian() {
-            pembelianTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Memuat...</td></tr>`;
+            pembelianTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Memuat...</td></tr>`;
 
             try {
                 const res = await fetch(API_URL_PEMBELIAN);
@@ -137,10 +165,10 @@
                     allPembelian = result.data;
                     filterAndDisplayPembelian(searchInput.value, 1);
                 } else {
-                    pembelianTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Gagal memuat data.</td></tr>`;
+                    pembelianTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Gagal memuat data.</td></tr>`;
                 }
             } catch (error) {
-                pembelianTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal terhubung ke server.</td></tr>`;
+                pembelianTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Gagal terhubung ke server.</td></tr>`;
             }
         }
 
@@ -167,22 +195,22 @@
         // 🔹 Render tabel
         function renderTable(data) {
             if (data.length === 0) {
-                pembelianTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Tidak ada data ditemukan.</td></tr>`;
+                pembelianTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Tidak ada data ditemukan.</td></tr>`;
                 return;
             }
 
             pembelianTableBody.innerHTML = data.map(p => {
                 return `
-                    <tr>
+                    <tr 
+                        onclick="warnabaris(this)" 
+                        ondblclick="editPembelian(${p.pembelian_id})"
+                        oncontextmenu="showContextMenu(event, ${p.pembelian_id})"
+                    >
                         <td>${p.pembelian_id}</td>
                         <td>${new Date(p.tanggal).toLocaleDateString('id-ID')}</td>
                         <td>${p.nama_suplier || 'Umum'}</td>
                         <td>${p.user_nama}</td>
                         <td style="text-align: right;">${formatRupiah(p.total)}</td>
-                        <td style="text-align: center;">
-                            <button onclick='editPembelian(${p.pembelian_id})'>Edit</button>
-                            <button onclick='deletePembelian(${p.pembelian_id})'>Hapus</button>
-                        </td>
                     </tr>`;
             }).join('');
         }
@@ -219,6 +247,33 @@
             window.location.href = `pembelian_baru.html?id=${id}`;
         }
 
+        // 🔹 Context Menu Logic
+        function showContextMenu(e, id) {
+            e.preventDefault(); // Mencegah menu konteks default browser muncul
+
+            // Highlight baris yang diklik kanan
+            const row = e.currentTarget;
+            warnabaris(row);
+
+            // Posisikan menu tepat di koordinat mouse (absolute relatif terhadap dokumen)
+            contextMenu.style.top = `${e.pageY}px`;
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.display = "block";
+
+            const menuDelete = document.getElementById("menuDelete");
+            menuDelete.onclick = (event) => {
+                event.stopPropagation(); // Mencegah event klik menyebar
+                deletePembelian(id);
+                contextMenu.style.display = "none";
+            };
+        }
+
+        // Sembunyikan context menu saat klik di mana saja
+        document.addEventListener("click", (event) => {
+            contextMenu.style.display = "none";
+            if (!event.target.closest("#pembelianTable")) clearSelectedRows();
+        });
+
         async function deletePembelian(id) {
             customConfirm("Yakin ingin menghapus pembelian ini? Stok barang akan dikurangi kembali.", async () => {
                 const res = await fetch(`${API_URL_PEMBELIAN}?id=${id}`, { method: "DELETE" });
@@ -231,12 +286,6 @@
         searchInput.addEventListener("input", e => filterAndDisplayPembelian(e.target.value, 1));
         prevButton.addEventListener('click', () => { if (currentPage > 1) filterAndDisplayPembelian(searchInput.value, currentPage - 1); });
         nextButton.addEventListener('click', () => { const totalPages = Math.ceil(filteredPembelian.length / itemsPerPage); if (currentPage < totalPages) filterAndDisplayPembelian(searchInput.value, currentPage + 1); });
-
-        document.addEventListener("click", (event) => {
-            if (!event.target.closest("#pembelianTable")) {
-                clearSelectedRows();
-            }
-        });
 
         fetchAllPembelian();
     </script>

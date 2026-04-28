@@ -19,15 +19,23 @@ ipcMain.handle('load-config', () => {
 });
 
 // Handler untuk menyimpan konfigurasi ke file JSON
-ipcMain.handle('save-config', (event, config) => {
+ipcMain.handle('save-config', (event, newConfig) => {
     try {
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+        let existingConfig = {};
+        if (fs.existsSync(configPath)) {
+            const data = fs.readFileSync(configPath, 'utf8');
+            existingConfig = JSON.parse(data);
+        }
+        const mergedConfig = { ...existingConfig, ...newConfig };
+        fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 2));
         return true;
     } catch (error) {
         console.error("Gagal menyimpan config.json:", error);
         return false;
     }
 });
+
+
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -55,12 +63,46 @@ function createWindow() {
         },
     });
 
+    // Di Main Process (main.js)
+    ipcMain.handle('get-printers', async () => {
+        const printers = await mainWindow.webContents.getPrintersAsync();
+        console.log("Printers found:", printers.length);
+        return printers;
+    });
+
+    ipcMain.on('print-url', (event, url, printerName) => {
+        const workerWindow = new BrowserWindow({ 
+            show: false,
+            width: 800, // Berikan dimensi agar layout ter-render
+            height: 600,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+            }
+        });
+
+        workerWindow.loadURL(url);
+
+        workerWindow.webContents.on('did-finish-load', () => {
+            // Gunakan timeout singkat untuk memastikan konten dinamis/CSS ter-render
+            setTimeout(() => {
+                workerWindow.webContents.print({
+                    silent: true,
+                    deviceName: printerName
+                }, (success, failureReason) => {
+                    if (!success) console.error('Print failed:', failureReason);
+                    workerWindow.destroy();
+                });
+            }, 2000); // Jeda 2 detik
+        });
+    });
+
     // Buka DevTools untuk debugging (opsional)
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
     // Memuat URL localhost Anda
     mainWindow.loadFile(path.join(__dirname, './pc/login.html'));
 }
-
+ 
 // Panggil createWindow() saat aplikasi sudah siap.
 const gotTheLock = app.requestSingleInstanceLock();
 

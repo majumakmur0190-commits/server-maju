@@ -1,6 +1,8 @@
 {
   "serverIp": "localhost",
-  "paginationLimit": 30,
+  "paginationLimit": 25,
+  "selectedPrinter": "EPSON LQ-310 ESC/P2",
+  "selectedPrinterTagihan": "EPSON LX-310 ESC/P KECIL",
   "userData": {
     "id": 1,
     "username": "admin",
